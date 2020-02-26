@@ -1,0 +1,80 @@
+import express from "express";
+import path from "path";
+import http from 'http';
+import cors from "cors";
+import logger from "morgan";
+import bodyParser from "body-parser";
+import compression from "compression";
+import expressValidator from "express-validator";
+const debug = require('debug')('placm-backend:server');
+
+import assertionRouter from "./routes/page";
+import countryRouter from "./routes/country";
+
+const app = express();
+app.use(compression());
+app.use(cors());
+
+app.use(logger('dev'));
+app.use(bodyParser.json({limit: '2mb'}));
+app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(expressValidator());
+
+app.use('/assertion', assertionRouter);
+app.use('/country', countryRouter);
+
+app.use(function(err: { message: any; status: any; }, req: { app: { get: (arg0: string) => string; }; }, res: { locals: { message: any; error: any; }; status: (arg0: any) => void; json: (arg0: { success: any; message: string; errors: null; results: null; }) => void; }, next: any) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  
+  // render the error page
+  res.status(err.status || 500);
+  res.json({ success: err.status || 500, message: 'SERVICE_NOT_FOUND', errors: null, results: null });
+});
+
+/**
+ * * * * * * * * * * * * * * * * * * 
+ * * * SERVER INITIALIZATION * * * *
+ * * * * * * * * * * * * * * * * * *
+ */
+const port = process.env.PORT || '3443';
+app.set('port', port);
+const server = http.createServer(app);
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+function onError(error: { syscall: string; code: any; }) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  const bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+function onListening() {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : addr !== null ? 'port ' + addr.port : 'nothing';
+  debug('Listening on ' + bind);
+}
+
+export = app;
