@@ -3,6 +3,11 @@ import { findAssertions } from "../lib/earl/find_assertions";
 import { error, success } from "../lib/responses";
 import {maxTextLength} from "../lib/constants"
 import { EarlAssertion } from "../lib/earl/earl_types";
+import {forEach} from 'lodash';
+import { response } from "express";
+
+const DOMParser = require('dom-parser');
+const fetch = require("node-fetch");
 
 const add_earl_report = async (...jsons: string[]) => {
   
@@ -124,40 +129,7 @@ const add_earl_report = async (...jsons: string[]) => {
         result.assertion.push(assertionSQL.insertId);
       }
     }
-    /*
-        FROM
-          Website as w,
-          Domain as d,
-          DomainPage as dp,
-          Page as p,
-          Evaluation as e
-        WHERE
-          LOWER(w.Name) = "${_.toLower(website)}" AND
-          w.UserId = "${user_id}" AND
-          d.WebsiteId = w.WebsiteId AND
-          dp.DomainId = d.DomainId AND
-          p.PageId = dp.PageId AND
-          p.Uri = "${url}" AND 
-          e.PageId = p.PageId AND 
-          e.Show_To LIKE "_1"
-        ORDER BY e.Evaluation_Date DESC 
-        LIMIT 1`;
-    }
 
-    return success({
-      pagecode: Buffer.from(evaluation.Pagecode, "base64").toString(),
-      data: {
-        title: evaluation.Title,
-        score: evaluation.Score,
-        rawUrl: url,
-        tot: tot,
-        nodes: JSON.parse(Buffer.from(evaluation.Nodes, "base64").toString()),
-        conform: `${evaluation.A}@${evaluation.AA}@${evaluation.AAA}`,
-        elems: tot.elems,
-        date: evaluation.Evaluation_Date
-      }
-    });
-    */
   } catch (err) {
     console.log(err);
     throw error(err);
@@ -179,4 +151,50 @@ function replacePrimeSymbol(text: string): string {
   return text.replace(/"/g, "\'");
 }
 
-export {add_earl_report};
+const add_accessibility_statement = async (...texts: string[]) => {
+
+  let statements: Array<Document> = [];
+  let parser = new DOMParser();
+
+  for(let text of texts){
+    if(text){
+      statements.push(parser.parseFromString(text, "text/html"));
+    }
+  }
+
+  let autoEvaluations, manualEvaluations;
+  let results: string[] = [];
+
+  for(let i = 0; i < statements.length; i++){
+    autoEvaluations = statements[i].getElementsByClassName("mr mr-automatic-summary");
+    manualEvaluations = statements[i].getElementsByClassName("mr mr-manual-summary");
+    let linksFound = findChildrenLinks(autoEvaluations, manualEvaluations);
+      for(let i = 0; i < linksFound.length; i++){
+        let fetchedText = await fetch(linksFound[i]);
+        if(await fetchedText){
+          results.push(await fetchedText.text());
+        }
+      }
+    }
+  return add_earl_report.apply(null, results);
+}
+
+function findChildrenLinks(...evaluations: HTMLCollectionOf<Element>[]): string[] {
+  let aElements, href;
+  let results: string[] = [];
+
+  forEach(evaluations, (evaluation => {
+    forEach(evaluation, (element => {
+      aElements = element.getElementsByTagName('a');
+      forEach(aElements, (a => {
+        href = a.getAttribute('href') !== null ? a.getAttribute('href') : "";
+        if(/^https?:\/\/.*\.json$/.test(href)){
+          results.push(href);
+        }
+      }));
+    }));
+  }));
+  return results;
+}
+
+export {add_earl_report, add_accessibility_statement};

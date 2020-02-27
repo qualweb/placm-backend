@@ -10,6 +10,7 @@ const debug = require('debug')('placm-backend:server');
 
 import assertionRouter from "./routes/page";
 import countryRouter from "./routes/country";
+import adminStatementRouter from "./routes/admin/statement"
 
 const app = express();
 app.use(compression());
@@ -23,6 +24,7 @@ app.use(expressValidator());
 
 app.use('/assertion', assertionRouter);
 app.use('/country', countryRouter);
+app.use('/admin/statement', adminStatementRouter);
 
 app.use(function(err: { message: any; status: any; }, req: { app: { get: (arg0: string) => string; }; }, res: { locals: { message: any; error: any; }; status: (arg0: any) => void; json: (arg0: { success: any; message: string; errors: null; results: null; }) => void; }, next: any) {
   // set locals, only providing error in development
