@@ -8,8 +8,8 @@ import compression from "compression";
 import expressValidator from "express-validator";
 const debug = require('debug')('placm-backend:server');
 
-import assertionRouter from "./routes/page";
 import countryRouter from "./routes/country";
+import adminReportRouter from "./routes/admin/report"
 import adminStatementRouter from "./routes/admin/statement"
 
 const app = express();
@@ -22,11 +22,11 @@ app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressValidator());
 
-app.use('/assertion', assertionRouter);
 app.use('/country', countryRouter);
+app.use('/admin/report', adminReportRouter);
 app.use('/admin/statement', adminStatementRouter);
 
-app.use(function(err: { message: any; status: any; }, req: { app: { get: (arg0: string) => string; }; }, res: { locals: { message: any; error: any; }; status: (arg0: any) => void; json: (arg0: { success: any; message: string; errors: null; results: null; }) => void; }, next: any) {
+app.use(function(err: any, req: any, res: any, next: any) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
