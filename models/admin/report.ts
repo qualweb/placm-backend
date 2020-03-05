@@ -1,8 +1,8 @@
 import execute_query = require("../../lib/database");
 import { findAssertions } from "../../lib/earl/find_assertions";
 import { error, success } from "../../lib/responses";
-import { maxTextLength } from "../../lib/constants";
 import { EarlAssertion } from "../../lib/earl/earl_types";
+import { regulateStringLength } from "../../lib/util";
 
 const add_earl_report = async (...jsons: string[]) => {
   let query;
@@ -95,7 +95,7 @@ const add_earl_report = async (...jsons: string[]) => {
         query = `INSERT INTO Application (name, url, creationdate)
           VALUES ("${websiteName}", "${websiteUrl}", "${assertionDate}");`;
         website = await execute_query(query);
-        result.website.push(website.insertId);
+        result.application.push(website.insertId);
       }
       /* ---------- handle page ---------- */
       pageUrl = regulateStringLength(websiteUrl.concat(urlRegexMatch[4]));
@@ -146,19 +146,5 @@ const add_earl_report = async (...jsons: string[]) => {
   }
   return success(result);
 };
-
-function regulateStringLength(text: string): string {
-  let result = text;
-  if (text.length > maxTextLength) {
-    result = text.substring(0, maxTextLength - 4);
-    result.concat("...");
-  }
-  result = replacePrimeSymbol(result);
-  return result;
-}
-
-function replacePrimeSymbol(text: string): string {
-  return text.replace(/"/g, "'");
-}
 
 export { add_earl_report };

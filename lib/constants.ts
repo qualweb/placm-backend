@@ -4,4 +4,9 @@ import * as COUNTRY_JSON from './country-by-continent.json';
 
 const maxTextLength = 255;
 
-export {DB_CONFIG, DB_CONFIG_X, COUNTRY_JSON, maxTextLength};
+const emailRegex = new RegExp(/\w+@\w+\.\w+/);
+const twitterRegex = new RegExp(/(?!\b)@[a-zA-Z0-9]{1,15}/g);
+const telephoneRegex = new RegExp(/^(?:[0-9]|[ -()+#.])+$/);
+
+export {DB_CONFIG, DB_CONFIG_X, COUNTRY_JSON, maxTextLength,
+        emailRegex, twitterRegex, telephoneRegex};
