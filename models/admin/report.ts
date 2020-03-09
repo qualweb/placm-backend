@@ -3,6 +3,7 @@ import { findAssertions } from "../../lib/earl/find_assertions";
 import { error, success } from "../../lib/responses";
 import { EarlAssertion } from "../../lib/earl/earl_types";
 import { regulateStringLength } from "../../lib/util";
+import { trim } from "lodash";
 
 const add_earl_report = async (...jsons: string[]) => {
   let query;
@@ -40,7 +41,7 @@ const add_earl_report = async (...jsons: string[]) => {
       index++;
 
       urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
-      urlTested = assertion.subject["source"];
+      urlTested = trim(assertion.subject["source"]);
       urlRegexMatch = urlTested.match(urlRegex);
       assertionDate = assertion.result["earl:date"];
 
@@ -98,7 +99,8 @@ const add_earl_report = async (...jsons: string[]) => {
         result.application.push(website.insertId);
       }
       /* ---------- handle page ---------- */
-      pageUrl = regulateStringLength(websiteUrl.concat(urlRegexMatch[4]));
+      //pageUrl = regulateStringLength(websiteUrl.concat(urlRegexMatch[4]));
+      pageUrl = urlTested;
 
       query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
       page = (await execute_query(query))[0];
@@ -127,15 +129,14 @@ const add_earl_report = async (...jsons: string[]) => {
                 Mode = "${assertionMode}" AND
                 Date = "${assertionDate}" AND
                 Description = "${assertionDesc}" AND
-                Outcome = "${assertionOutcome}" AND
-                TestedUrl = "${urlTested}";`;
+                Outcome = "${assertionOutcome}";`;
       assertionSQL = (await execute_query(query))[0];
       if (!assertionSQL) {
-        query = `INSERT INTO Assertion (EvaluationToolId, RuleId, PageId, Mode, Date, Description, Outcome, TestedUrl)
+        query = `INSERT INTO Assertion (EvaluationToolId, RuleId, PageId, Mode, Date, Description, Outcome)
                 VALUES ("${evaluationTool.insertId ||
                   evaluationTool.EvaluationToolId}", "${rule.insertId ||
           rule.RuleId}", "${page.insertId || page.PageId}",
-                "${assertionMode}", "${assertionDate}", "${assertionDesc}", "${assertionOutcome}", "${urlTested}");`;
+                "${assertionMode}", "${assertionDate}", "${assertionDesc}", "${assertionOutcome}");`;
         assertionSQL = await execute_query(query);
         result.assertion.push(assertionSQL.insertId);
       }

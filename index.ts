@@ -8,6 +8,7 @@ import compression from "compression";
 import expressValidator from "express-validator";
 const debug = require('debug')('placm-backend:server');
 
+import protoRouter from "./routes/admin/proto";
 import countryRouter from "./routes/country";
 import adminReportRouter from "./routes/admin/report"
 import adminStatementRouter from "./routes/admin/statement"
@@ -22,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressValidator());
 
+app.use('/proto', protoRouter);
 app.use('/country', countryRouter);
 app.use('/admin/report', adminReportRouter);
 app.use('/admin/statement', adminStatementRouter);

@@ -1,4 +1,5 @@
 import { maxTextLength } from "./constants";
+import { trim } from "lodash";
 
 function setCharAt(str: string, index: number, chr: string): string {
   if (index > str.length - 1) return str;
@@ -6,17 +7,25 @@ function setCharAt(str: string, index: number, chr: string): string {
 }
 
 function regulateStringLength(text: string): string {
-    let result = text;
-    if (text.length > maxTextLength) {
-      result = text.substring(0, maxTextLength - 4);
-      result.concat("...");
-    }
-    result = replacePrimeSymbol(result);
-    return result;
+  let result = trim(text);
+  if (text.length > maxTextLength) {
+    result = text.substring(0, maxTextLength - 4);
+    result.concat("...");
   }
-  
-  function replacePrimeSymbol(text: string): string {
-    return text.replace(/"/g, "'");
+  result = replacePrimeSymbol(result);
+  return result;
 }
 
-export {setCharAt, regulateStringLength, replacePrimeSymbol};
+function replacePrimeSymbol(text: string): string {
+  return trim(text).replace(/"/g, '\\"');
+}
+
+function readyStringToQuery(text: string): string {
+  return '"'.concat(regulateStringLength(text), '"');
+}
+
+function readyUrlToQuery(url: string): string {
+  return '"'.concat(replacePrimeSymbol(url), '"');
+}
+
+export {setCharAt, regulateStringLength, replacePrimeSymbol, readyStringToQuery, readyUrlToQuery};

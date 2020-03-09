@@ -1,6 +1,6 @@
 import { success, error } from "../lib/responses";
 import { COUNTRY_JSON } from "../lib/constants";
-import execute_query = require("../lib/database");
+import { execute_query } from "../lib/database";
 
 const add_countries = async () => {
   let result: any = {
@@ -32,4 +32,4 @@ const add_countries = async () => {
   return success(result);
 };
 
-export { add_countries };
+export {add_countries};

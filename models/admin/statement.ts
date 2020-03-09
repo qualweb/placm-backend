@@ -1,25 +1,40 @@
-import { forEach, trim } from "lodash";
+import { forEach } from "lodash";
 import { add_earl_report } from "./report";
 import { parse } from 'node-html-parser';
 import { twitterRegex, emailRegex, telephoneRegex } from "../../lib/constants";
-import { setCharAt, regulateStringLength } from "../../lib/util";
+import { setCharAt, readyStringToQuery, readyUrlToQuery } from "../../lib/util";
 import execute_query = require("../../lib/database");
 import { error, success } from "../../lib/responses";
-import { ifError } from "assert";
 
 const fetch = require("node-fetch");
 
-const add_accessibility_statement = async (...texts: string[]) => {
+const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: string[]) => {
+  console.log(numLinks);
 
   let statements: any[] = [];
+  let linksRead: string[] = [];
 
-  for(let text of texts){
+  /*for(let text of texts){
     if(text){
       statements.push(parse(text));
+    }
+  }*/
+
+
+  for(let i = 0; i < linksAndTexts.length; i++){
+    if(numLinks > 0 && i <= numLinks - 1){
+      if(linksAndTexts[i]){
+        linksRead.push(linksAndTexts[i]);
+      }
+    } else {
+      if(linksAndTexts[i]){
+        statements.push(parse(linksAndTexts[i]));
+      }
     }
   }
 
   let origin;
+  let asUrl;
   let organization, orgElem;
   let name, nameElem;
   let appUrl, appUrlElem;
@@ -32,7 +47,7 @@ const add_accessibility_statement = async (...texts: string[]) => {
       visitorAddress: string[] = [], postalAddress: string[] = [];
   let phoneElem, emailElem, extraContactsElem, visitorAddrElem, postalAddrElem, 
       allContactsElem, allContactsElemList; 
-  let durResponse: string, durResponseElem;
+  let durResponse: string | null = null, durResponseElem;
   let earlReports: string[] = [];
   let effortsCounter = 0, effortsListElem;
   let limitationsCounter = 0, limitationsListElem;
@@ -48,8 +63,8 @@ const add_accessibility_statement = async (...texts: string[]) => {
     reports: {}
   };
 
-  let query;
-  let application, asSQL;
+  let query: any;
+  let application: any, asSQL: any, contact: any;
 
   for(let i = 0; i < statements.length; i++){
     /* ---------- handle organization name ---------- */
@@ -118,7 +133,7 @@ const add_accessibility_statement = async (...texts: string[]) => {
     if(dateElem.length){
       date = dateElem[0].text;
     } else {
-      dateElem = statements[i].querySelectorAll(".basic-information,statement-created-date");
+      dateElem = statements[i].querySelectorAll(".basic-information.statement-created-date");
       if(dateElem.length){
         date = dateElem[0].text;
       }
@@ -261,13 +276,14 @@ const add_accessibility_statement = async (...texts: string[]) => {
     /* ---------- handle technologies ---------- */
     technologiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(technologiesListElem.length){
-      forEach(technologiesListElem[0].childNodes, (child => {
-        if(child.tagName && technologiesUsed){
-          technologiesUsed = technologiesUsed.concat(child.text.replace(';',','), ';');
+      forEach(technologiesListElem[0].childNodes, (tech => {
+        if(tech.tagName && technologiesUsed){
+          technologiesUsed = technologiesUsed.concat(tech.text.replace(';',','), ';');
         }
       }));
     }
-    if(technologiesUsed.length > 1){
+    // to remove final dot
+    if(technologiesUsed && technologiesUsed.length > 1){
       technologiesUsed = technologiesUsed.substring(0, technologiesUsed.length - 1);
     }
 
@@ -310,92 +326,127 @@ const add_accessibility_statement = async (...texts: string[]) => {
         }
       }));
     }
-  }
 
-  appUrl = appUrl === undefined ? null : regulateStringLength(appUrl);
-  organization = organization === undefined ? null : regulateStringLength(organization);
-  date = date === undefined ? Date.now : regulateStringLength(date);
+    appUrl = appUrl === undefined ? null : readyUrlToQuery(appUrl);
+    organization = organization === undefined ? null : readyStringToQuery(organization);
+    date = date === undefined ? new Date().toISOString().slice(0, 19).replace('T', ' ') : new Date(date).toISOString().slice(0, 19).replace('T', ' ');
 
-  origin = origin === undefined ? 'unknown' : regulateStringLength(origin);
-  standard = standard === undefined ? 'unknown' : standard;
-  sealText = sealText === undefined ? null : regulateStringLength(sealText);
-  technologiesUsed = technologiesUsed === "" ? null : regulateStringLength(technologiesUsed);
+    origin = origin === undefined ? 'unknown' : readyStringToQuery(origin);
+    asUrl = linksRead[i] === undefined ? null : readyUrlToQuery(linksRead[i]);
+    standard = standard === undefined ? 'unknown' : standard;
+    sealText = sealText === undefined ? null : readyStringToQuery(sealText);
+    technologiesUsed = technologiesUsed === null ? null : readyStringToQuery(technologiesUsed);
 
-  durResponse = durResponse === undefined ? null : regulateStringLength(durResponse);
+    durResponse = durResponse === null ? null : readyStringToQuery(durResponse);
 
-  try {
-    /* todo name nao eh unique.. isto vai dar raia */
-    query = `SELECT ApplicationId FROM Application WHERE name = "${name}";`;
-    application = (await execute_query(query))[0];
-    if (!application) {
-      query = `INSERT INTO Application (name, url, organization, creationdate)
-        VALUES ("${name}", "${appUrl}", "${organization}", "${date}");`;
-      application = await execute_query(query);
-      results.applications.push(application.insertId);
+    try {
+      if(appUrl === null){
+        query = `SELECT ApplicationId FROM Application WHERE name = "${name}" AND organization = ${organization};`;
+      } else {
+        query = `SELECT ApplicationId FROM Application WHERE url = ${appUrl};`;
+      }
+      application = (await execute_query(query))[0];
+      if (!application) {
+        query = `INSERT INTO Application (name, url, organization, creationdate)
+          VALUES ("${name}", ${appUrl}, ${organization}, "${date}");`;
+        application = await execute_query(query);
+        results.applications.push(application.insertId);
+      }
+
+      // todo fix from:file
+      if(asUrl === null){
+        query = `SELECT ASId FROM AccessibilityStatement 
+                    WHERE 
+                    Origin = ${origin} AND
+                    ApplicationId = "${application.insertId || application.ApplicationId}" AND
+                    Standard = "${standard}" AND
+                    Date = "${date}" AND
+                    State = "${state}" AND
+                    UsabilityStamp = "${sealEnum}" AND
+                    UsabilityStampText = ${sealText} AND
+                    LimitationsWithoutAltCounter = "${limitationsCounter}" AND
+                    CompatabilitiesCounter = "${compatabilitiesCounter}" AND
+                    IncompatabilitiesCounter = "${incompatabilitiesCounter}" AND
+                    TechnologiesUsed = ${technologiesUsed} AND
+                    AccessmentApproach = "${approach}";`;
+      } else {
+        query = `SELECT ASId FROM AccessibilityStatement 
+                    WHERE
+                    ASUrl = ${asUrl};`;
+      }
+      asSQL = (await execute_query(query))[0];
+      if (!asSQL) {
+        query = `INSERT INTO AccessibilityStatement (Origin, ASUrl, ApplicationId, Standard, Date, State, UsabilityStamp, UsabilityStampText, 
+                LimitationsWithoutAltCounter, CompatabilitiesCounter, IncompatabilitiesCounter, TechnologiesUsed, AccessmentApproach)
+                VALUES (${origin}, ${asUrl}, "${application.insertId || application.ApplicationId}", "${standard}",
+                "${date}", "${state}", "${sealEnum}", ${sealText}, "${limitationsCounter}", "${compatabilitiesCounter}", 
+                "${incompatabilitiesCounter}", ${technologiesUsed}, "${approach}");`;
+        asSQL = await execute_query(query);
+        results.astatements.push(asSQL.insertId);
+      }
+
+      forEach(phoneNumber, (async phone => {
+        phone = readyStringToQuery(phone);
+        query = `SELECT ContactId FROM Contact WHERE type = "phone" AND contact = ${phone};`;
+        contact = (await execute_query(query))[0];
+        if (!contact) {
+          query = `INSERT INTO Contact (type, contact)
+            VALUES ("phone", ${phone});`;
+            contact = await execute_query(query);
+          results.contacts.push(contact.insertId);
+        }
+      }));
+      forEach(email, (async emailAddr => {
+        emailAddr = readyStringToQuery(emailAddr);
+        query = `SELECT ContactId FROM Contact WHERE type = "email" AND contact = ${emailAddr};`;
+        contact = (await execute_query(query))[0];
+        if (!contact) {
+          query = `INSERT INTO Contact (type, contact, durationresponse)
+            VALUES ("email", ${emailAddr}, ${durResponse});`;
+            contact = await execute_query(query);
+          results.contacts.push(contact.insertId);
+        }
+      }));
+      forEach(visitorAddress, (async visitorAddr => {
+        visitorAddr = readyStringToQuery(visitorAddr);
+        query = `SELECT ContactId FROM Contact WHERE type = "visitorAdress" AND contact = ${visitorAddr};`;
+        contact = (await execute_query(query))[0];
+        if (!contact) {
+          query = `INSERT INTO Contact (type, contact)
+            VALUES ("visitorAdress", ${visitorAddr});`;
+            contact = await execute_query(query);
+          results.contacts.push(contact.insertId);
+        }
+      }));
+      forEach(postalAddress, (async postalAddr => {
+        postalAddr = readyStringToQuery(postalAddr);
+        query = `SELECT ContactId FROM Contact WHERE type = "postalAdress" AND contact = ${postalAddr};`;
+        contact = (await execute_query(query))[0];
+        if (!contact) {
+          query = `INSERT INTO Contact (type, contact)
+            VALUES ("postalAdress", ${postalAddr});`;
+            contact = await execute_query(query);
+          results.contacts.push(contact.insertId);
+        }
+      }));
+      forEach(twitter, (async twitterAt => {
+        twitterAt = readyStringToQuery(twitterAt);
+        query = `SELECT ContactId FROM Contact WHERE type = "twitter" AND contact = ${twitterAt};`;
+        contact = (await execute_query(query))[0];
+        if (!contact) {
+          query = `INSERT INTO Contact (type, contact, durationresponse)
+            VALUES ("twitter", ${twitterAt}, ${durResponse});`;
+            contact = await execute_query(query);
+          query = `INSERT INTO AcceStatContact (ASId, ContactId)
+            VALUES ("${asSQL.insertId || asSQL.ASId}", "${contact.insertId}");`
+          results.contacts.push(contact.insertId);
+        }
+      }));
+      results.reports = (await add_earl_report(...earlReports)).result;
+    } catch (err){
+      console.log(err);
+      throw error(err);
     }
-
-    // todo fix from:file
-    query = `SELECT ASId FROM AccessibilityStatement 
-                  WHERE 
-                  Origin = "${origin}" AND
-                  ASUrl = "from:file" AND
-                  ApplicationId = "${application.insertId || application.ApplicationId}" AND
-                  Standard = "${standard}" AND
-                  Date = "${date}" AND
-                  State = "${state}" AND
-                  UsabilityStamp = "${sealEnum}" AND
-                  UsabilityStampText = "${sealText}" AND
-                  LimitationsWithoutAltCounter = "${limitationsCounter}" AND
-                  CompatabilitiesCounter = "${compatabilitiesCounter}" AND
-                  IncompatabilitiesCounter = "${incompatabilitiesCounter}" AND
-                  TechnologiesUsed = "${technologiesUsed}" AND
-                  AccessmentApproach = "${approach}";`;
-    asSQL = (await execute_query(query))[0];
-    if (!asSQL) {
-      query = `INSERT INTO AccessibilityStatement (Origin, ASUrl, ApplicationId, Standard, Date, State, UsabilityStamp, UsabilityStampText, 
-              LimitationsWithoutAltCounter, CompatabilitiesCounter, IncompatabilitiesCounter, TechnologiesUsed, AccessmentApproach)
-              VALUES ("${origin}", "from:file", "${application.insertId || application.ApplicationId}", "${standard}",
-              "${date}", "${state}", "${sealEnum}", "${sealText}", "${limitationsCounter}", "${compatabilitiesCounter}", 
-              "${incompatabilitiesCounter}", "${technologiesUsed}", "${approach}");`;
-      asSQL = await execute_query(query);
-      results.astatements.push(asSQL.insertId);
-    }
-
-    forEach(phoneNumber, (async phone => {
-      query = `SELECT ContactId FROM Contact WHERE type = "phone" AND contact = "${phone}";`;
-      contact = (await execute_query(query))[0];
-      if (!contact) {
-        query = `INSERT INTO Contact (type, contact, durationresponse)
-          VALUES ("phone", "${phone}", "${durResponse}");`;
-          contact = await execute_query(query);
-        results.contacts.push(contact.insertId);
-      }
-    }));
-    forEach(email, (async emailAddr => {
-      query = `SELECT ContactId FROM Contact WHERE type = "email" AND contact = "${emailAddr}";`;
-      contact = (await execute_query(query))[0];
-      if (!contact) {
-        query = `INSERT INTO Contact (type, contact, durationresponse)
-          VALUES ("email", "${emailAddr}", "${durResponse}");`;
-          contact = await execute_query(query);
-        results.contacts.push(contact.insertId);
-      }
-    }));
-    forEach(visitorAddress, (async visitorAddr => {
-      query = `SELECT ContactId FROM Contact WHERE type = "visitorAdress" AND contact = "${visitorAddr}";`;
-      contact = (await execute_query(query))[0];
-      if (!contact) {
-        query = `INSERT INTO Contact (type, contact)
-          VALUES ("visitorAdress", "${visitorAddr}");`;
-          contact = await execute_query(query);
-        results.contacts.push(contact.insertId);
-      }
-    }));
-
-    results.reports = (await add_earl_report(...earlReports)).result;
-  } catch (err){
-    console.log(err);
-    throw error(err);
   }
   return success(results);
 }
