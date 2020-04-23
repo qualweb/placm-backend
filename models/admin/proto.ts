@@ -2,7 +2,21 @@ import { success, error } from "../../lib/responses";
 import { execute_query_proto } from "../../lib/database";
 import { COUNTRY_JSON } from "../../lib/constants";
 import * as fs from 'fs';
-import { trim } from "lodash";
+import { trim, includes } from "lodash";
+import path from "path";
+import puppeteer from "puppeteer";
+import { url } from "inspector";
+import { parse } from 'node-html-parser';
+import { start } from "repl";
+
+const excelToJson = require('convert-excel-to-json');
+let Crawler = require('simplecrawler');
+
+const fetch = require("node-fetch");
+
+const c = require('ansi-colors');
+
+const randomWords = require('random-words');
 
 const add_filedata = async () => {
   let result: any = {
@@ -17,108 +31,144 @@ const add_filedata = async () => {
 
   let query, entries: string[], data: string[];
   let tag, evalTool, rule, app, page, assertion, tagapp, url;
+  const numberApps = 15;
+  const numberPages = 10;
+  const numberTools = 5;
+  // todo arranjar numberTools para ir buscar atraves de um select
 
+  let line;
   fs.readFile('lib/protodata.txt', async function (err, data) {
     if (err) {
       console.error(err);
     }
     entries = data.toString().split('\r\n\r\n');
     for (let entry of entries) {
-      data = trim(entry).split('\r\n');
-      switch (data[0]) {
+      line = trim(entry).split('\r\n');
+      switch (line[0]) {
         case 'Tag':
-          query = `SELECT TagId FROM Tag WHERE name = "${data[1]}";`;
+          query = `SELECT TagId FROM Tag WHERE name = "${line[1]}";`;
           tag = (await execute_query_proto(query))[0];
           if (!tag) {
             query = `INSERT INTO Tag (name)
-                VALUES ("${data[1]}");`;
+                VALUES ("${line[1]}");`;
             tag = await execute_query_proto(query);
             result.tags.push(tag.insertId);
           };
           break;
         case 'EvaluationTool':
-          query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${data[1]}";`;
+          query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${line[1]}";`;
           evalTool = (await execute_query_proto(query))[0];
           if (!evalTool) {
-            if(data[2] === '-'){
+            if(line[2] === '-'){
               url = null;
             } else {
-              url = '"'.concat(data[2],'"');
+              url = '"'.concat(line[2],'"');
             }
             query = `INSERT INTO EvaluationTool (name, url, description, version)
-                VALUES ("${data[1]}", ${url}, "${data[3]}", "${data[4]}");`;
+                VALUES ("${line[1]}", ${url}, "${line[3]}", "${line[4]}");`;
             evalTool = await execute_query_proto(query);
             result.evaluationTools.push(evalTool.insertId);
           };
           break;
         case 'Rule':
-          query = `SELECT RuleId FROM Rule WHERE name = "${data[1]}";`;
+          query = `SELECT RuleId FROM Rule WHERE name = "${line[1]}";`;
           rule = (await execute_query_proto(query))[0];
           if (!rule) {
-            if(data[2] === '-'){
+            if(line[2] === '-'){
               url = null;
             } else {
-              url = '"'.concat(data[2],'"');
+              url = '"'.concat(line[2],'"');
             }
             query = `INSERT INTO Rule (name, url, description)
-                VALUES ("${data[1]}", ${url}, "${data[3]}");`;
+                VALUES ("${line[1]}", ${url}, "${line[3]}");`;
             rule = await execute_query_proto(query);
             result.rules.push(rule.insertId);
-          };
-          break;
-        case 'Application':
-          query = `SELECT ApplicationId FROM Application WHERE name = "${data[1]}";`;
-          app = (await execute_query_proto(query))[0];
-          if (!app) {
-            query = `INSERT INTO Application (name, organization, type, sector, url, creationdate, score, countryid)
-                VALUES ("${data[1]}", "${data[2]}", "${data[3]}", "${data[4]}", "${data[5]}", "${data[6]}", "${data[7]}", "${data[8]}");`;
-            app = await execute_query_proto(query);
-            result.applications.push(app.insertId);
-          };
-          break;
-        case 'Page':
-          query = `SELECT PageId FROM Page WHERE url = "${data[1]}";`;
-          page = (await execute_query_proto(query))[0];
-          if (!page) {
-            query = `INSERT INTO Page (url, creationdate, score, applicationid)
-                VALUES ("${data[1]}", "${data[2]}", "${data[3]}", "${data[4]}");`;
-            page = await execute_query_proto(query);
-            result.pages.push(page.insertId);
-          };
-          break;
-        case 'Assertion':
-          query = `SELECT AssertionId FROM Assertion WHERE 
-              evaluationtoolid = "${data[1]}" AND
-              ruleid = "${data[2]}" AND
-              pageid = "${data[3]}" AND
-              mode = "${data[4]}" AND
-              date = "${data[5]}" AND
-              description = "${data[6]}" AND
-              outcome = "${data[7]}";`;
-          assertion = (await execute_query_proto(query))[0];
-          if (!assertion) {
-            query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
-                VALUES ("${data[1]}", "${data[2]}", "${data[3]}", "${data[4]}", "${data[5]}", "${data[6]}", "${data[7]}");`;
-            assertion = await execute_query_proto(query);
-            result.assertions.push(assertion.insertId);
-          };
-          break;
-        case 'TagApplication':
-          query = `SELECT TagId FROM TagApplication WHERE 
-              TagId = "${data[1]}" AND
-              ApplicationId = "${data[2]}";`;
-          tagapp = (await execute_query_proto(query))[0];
-          if (!tagapp) {
-            query = `INSERT INTO TagApplication (TagId, ApplicationId)
-                VALUES ("${data[1]}", "${data[2]}");`;
-              tagapp = await execute_query_proto(query);
-            result.tagApps.push(tagapp.insertId);
           };
           break;
         default:
           break;
       }
     }
+
+    let appName, appUrl, appDate, appId;
+    let tagId;
+    let evaluationToolId;
+    let pageUrl, pageId;
+    let assertionDesc, assertionOutcome;
+    let outcomes = ['passed', 'failed', 'cantTell', 'inapplicable', 'untested'];
+
+    for(let i = 0; i <= numberApps; i++) {
+      // Application
+      appName = randomWords({ exactly: 2, join: ' ' });
+      appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
+      appDate = '2020-0'.concat(Math.floor(Math.random()*10).toString())
+          .concat('-')
+          .concat(Math.floor(Math.random()*3).toString())
+          .concat(Math.floor(Math.random()*10).toString())
+          .concat(' 00:00:00');
+      query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
+      app = (await execute_query_proto(query))[0];
+      if (!app) {
+        query = `INSERT INTO Application (name, organization, type, sector, url, creationdate, countryid)
+            VALUES ("${appName}", "${randomString(15, 'a')}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
+        app = await execute_query_proto(query);
+        result.applications.push(app.insertId);
+      };
+      appId = app.insertId || app.ApplicationId;
+
+      // TagApplication
+      tagId = Math.floor(Math.random()*4)+1;
+      query = `SELECT TagId FROM TagApplication WHERE 
+                TagId = "${tagId}" AND
+                ApplicationId = "${appId}";`;
+      tagapp = (await execute_query_proto(query))[0];
+      if (!tagapp) {
+        query = `INSERT INTO TagApplication (TagId, ApplicationId)
+            VALUES ("${tagId}", "${appId}");`;
+          tagapp = await execute_query_proto(query);
+        result.tagApps.push(tagapp.insertId);
+      };
+
+      evaluationToolId = Math.floor(Math.random()*3)+1;
+
+      // Page
+      for(let j = 0; j <= numberPages; j++) {
+        pageUrl = appUrl.concat('/').concat(randomString(10));
+        query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
+        page = (await execute_query_proto(query))[0];
+        if (!page) {
+          query = `INSERT INTO Page (url, creationdate, applicationid)
+              VALUES ("${pageUrl}", "${appDate}", "${appId}");`;
+          page = await execute_query_proto(query);
+          result.pages.push(page.insertId);
+        };
+        pageId = page.insertId || page.PageId;
+
+        // Assertion
+        for(let r = 1; r <= numberTools; r++) {
+
+          assertionDesc = randomString(15,'a');
+          assertionOutcome = outcomes[Math.floor(Math.random()*5)];
+
+          query = `SELECT AssertionId FROM Assertion WHERE 
+                evaluationtoolid = "$evaluationToolId}" AND
+                ruleid = "${r}" AND
+                pageid = "${pageId}" AND
+                mode = "automatic" AND
+                date = "${appDate}" AND
+                description = "${assertionDesc}" AND
+                outcome = "${assertionOutcome}";`;
+          assertion = (await execute_query_proto(query))[0];
+          if (!assertion) {
+            query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
+                VALUES ("${evaluationToolId}", "${r}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
+            assertion = await execute_query_proto(query);
+            result.assertions.push(assertion.insertId);
+          };
+        }
+      }
+    }
+    
     return success(result);
   });
 };
@@ -153,4 +203,405 @@ const add_countries = async () => {
   return success(result);
 };
 
-export { add_filedata, add_countries };
+async function correct_urls_files_json() {
+
+  let jsonSegments;
+  let links: string[][] = [];
+  let linksAmostra: string[] = [];
+  let linksEnsinoSuperior: string[] = [];
+  let linksMunicipios: string[] = [];
+  let linksONG: string[] = [];
+  let textFromLink, textsFromLinks: string[] = [];
+
+  let failedLinks: string[][] = [];
+  let differentLinks: string[][] = [];
+
+  let urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
+
+  let amostra = <string> await readFile('lib/data_links_jsons', 'amostra2015_json.json');
+  let ensinoSuperior = <string> await readFile('lib/data_links_jsons', 'ensino_superior_json.json');
+  let municipios = <string> await readFile('lib/data_links_jsons', 'municipios_json.json');
+  let ongpd = <string> await readFile('lib/data_links_jsons', 'ongpd_json.json');
+  
+  amostra = trim(amostra).replace((/  |\r\n|\n|\r|/gm),"");
+  jsonSegments = JSON.parse(amostra);
+  for(let json of jsonSegments){
+    linksAmostra.push(json.url);
+    links.push([json.Entidade, json.url]);
+  }
+  ensinoSuperior = trim(ensinoSuperior).replace((/  |\r\n|\n|\r|/gm),"");
+  jsonSegments = JSON.parse(ensinoSuperior);
+  for(let json of jsonSegments){
+    linksEnsinoSuperior.push(json.url);
+    links.push([json.Estabelecimento, json.url]);
+  }
+  municipios = trim(municipios).replace((/  |\r\n|\n|\r|/gm),"");
+  jsonSegments = JSON.parse(municipios);
+  for(let json of jsonSegments){
+    linksMunicipios.push(json.url);
+    links.push([json.Municipio, json.url]);
+  }
+  ongpd = trim(ongpd).replace((/  |\r\n|\n|\r|/gm),"");
+  jsonSegments = JSON.parse(ongpd);
+  for(let json of jsonSegments){
+    linksONG.push(json.url);
+    links.push([json.Entidade, json.url]);
+  }
+
+  const browser = await puppeteer.launch({
+    ignoreHTTPSErrors: true
+  });
+  
+  const page = await browser.newPage();
+  let fileNumber;
+  console.log(links.length);
+  let index = 0;
+  let website, protocol, cleanJsonUrl;
+
+  let entities = links.map(function(x){
+    return x[0];
+  });
+  let urls = links.map(function(x) {
+    return x[1];
+  });
+
+  for await (let url of urls){
+    console.log(index);
+
+    website = url.match(urlRegex);
+    website = website === null ? [] : website;
+    if(website.length){
+      protocol = website[1];
+      cleanJsonUrl = protocol.concat('/', website[3]);
+    } else {
+      cleanJsonUrl = url;
+    }
+
+    if(includes(linksAmostra, url)){
+      fileNumber = 1;
+    } else if(includes(linksEnsinoSuperior, url)){
+      fileNumber = 2;
+    } else if(includes(linksMunicipios, url)){
+      fileNumber = 3;
+    } else {
+      fileNumber = 4;
+    }
+
+    try {
+      let result = await page.goto(cleanJsonUrl);
+      if(result !== null){
+        if(result.status() >= 400){
+          failedLinks.push([fileNumber.toString(), entities[index], url, "0 - ".concat(result.status().toString())]);
+          console.log("oops");
+        } else {
+          differentLinks.push([fileNumber.toString(), entities[index], url, await page.url()]);
+          console.log("okay");
+        }
+      } else {
+        failedLinks.push([fileNumber.toString(), entities[index], url, "1"]);
+        console.log("oops");
+      }
+    } catch (error) {
+      failedLinks.push([fileNumber.toString(), entities[index], url, "2 - error ".concat(error)]);
+      console.log("oops");
+    }
+    index++;
+  }
+
+    /*if(/^https?:\/\/.*$/.test(url)){
+      if(url[url.length-1] === '/'){
+        url = url.concat('acessibilidade');
+      } else {
+        url = url.concat('/acessibilidade');
+      }
+      textFromLink = <string> await fetch(url)
+          .then(response => {
+            if (response.status === 200) {
+              return response.text();
+            } else {
+              throw new Error(response.statusText);
+            }
+          })
+          .catch(err => {
+            failedLinks.push(url);
+            error = 1;
+        });
+      if(textFromLink){
+        textsFromLinks.push(textFromLink);
+        successfulLinks.push(url);
+      } else {
+        if(error !== 1)
+          emptyLinks.push(url);
+      }
+    } else {
+      regexLinks.push(url);
+    }
+    error = 0;
+  }*/
+
+  let result = "\ufeffFile;Entity;Failed url;Erro\n";
+  for(let fl of failedLinks){
+    switch(fl[0]){
+      case '1':
+        result = result.concat('Amostra2015;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        break;
+      case '2':
+        result = result.concat('EnsinoSuperior;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        break;
+      case '3':
+        result = result.concat('Municipios;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        break;
+      case '4':
+        result = result.concat('ONG;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        break;
+      default:
+        break;
+    }
+  }
+  let difference = "\ufeffFile;Entity;Registered url;Redirected url\n";
+  let domain;
+  for(let data of differentLinks){
+
+    website = data[3].match(urlRegex);
+    website = website === null ? [] : website;
+    if(website.length){
+      protocol = website[1];
+      domain = protocol.concat('/', website[3]);
+    } else {
+      domain = data[3];
+    }
+
+    //let cleanRegisteredUrl = data[1][data[1].length - 1] === '/' ? data[1].substring(0; data[1].length - 1) : data[1];
+    let cleanRedirectedUrl = domain[domain.length - 1] === '/' ? domain.substring(0, domain.length - 1) : domain;
+      switch(data[0]){
+        case '1':
+          difference = difference.concat('Amostra2015;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          break;
+        case '2':
+          difference = difference.concat('EnsinoSuperior;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          break;
+        case '3':
+          difference = difference.concat('Municipios;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          break;
+        case '4':
+          difference = difference.concat('ONG;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          break;
+        default:
+          break;
+    }
+  }
+  
+  fs.writeFile('lib/failed_results.csv', await result, (err) => {
+    if (err) console.log(err);
+    console.log('Results saved!');
+  });
+  fs.writeFile('lib/difference_results.csv', await difference, (err) => {
+    if (err) console.log(err);
+    console.log('Differences saved!');
+  });
+
+
+  /*try {
+    for (let c of Object.values(COUNTRY_JSON)) {
+      query = `SELECT Name FROM Country WHERE name = "${c.country}";`;
+      country = (await execute_query_proto(query))[0];
+      if (!country && c.country) {
+        query = `INSERT INTO Country (name, continent)
+            VALUES ("${c.country}", "${c.continent}");`;
+        country = await execute_query_proto(query);
+        result.entries.push(country.insertId);
+        result.countries.push(c.country);
+        if (result.continents.indexOf(c.continent) === -1)
+          result.continents.push(c.continent);
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    throw error(err);
+  }
+  return success(result);*/
+};
+async function add_as_from_links_excel() {
+
+  let linksWithAS: string[][] = [];
+
+  let urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
+
+  /*const browser = await puppeteer.launch({
+    ignoreHTTPSErrors: true
+  });
+  const page = await browser.newPage();*/
+
+  let workbook = excelToJson({
+    sourceFile: 'lib/urls_portugal_2020.xlsx',
+    header: {
+      rows: 1
+    },
+    columnToKey: {
+      A: 'entity',
+      B: 'old_url',
+      C: 'new_url',
+      D: 'changed',
+    },
+    sheets: ['Amostra2015 - diferenças','EnsinoSuperior - diferenças','Municípios - diferenças','ONG - diferenças']
+  });
+
+  let index = 0;
+  let textDocument: string;
+  let html: any;
+  let urls: string[] = [];
+  let excelLinks: string = "";
+
+  for (let sheet in workbook){
+    for (let row of workbook[sheet]){
+      excelLinks = excelLinks.concat(trim(row['new_url']), '\n');
+    }
+  }
+
+  /*fs.writeFile('lib/new_urls.txt', excelLinks, (err) => {
+    if (err) console.log(err);
+    console.log('New urls saved!');
+  });*/
+
+  let newurls: string | null;
+  newurls = await new Promise((resolve, reject) => {
+    fs.readFile('lib/new_urls.txt', function (err, data) {
+      if (err) {
+        resolve(null);
+      }
+      resolve(data.toString());
+    });
+  });
+
+  let crawler: any;
+  if(typeof newurls === 'string'){
+    if(newurls.endsWith('\n')){
+      newurls = newurls.substring(0,newurls.length-1);
+    }
+    for await(let url of newurls.split('\n')){
+      index = 0;
+      urls = [];
+      if(url === '-'){
+        continue;
+      }
+      urls = await new Promise((resolve, reject) => {
+        crawler = new Crawler(url);
+        crawler.on("crawlstart", function() {
+          console.log(c.bold.blue('Starting >'), url);
+        });
+        crawler.on("fetchcomplete", function(queueItem: any) {
+          urls.push(queueItem.url);
+          //console.log(queueItem.url);
+        });
+        crawler.on("fetcherror", function (queueItem: any, responseBuffer: any) {
+          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+            if (err) throw err;
+            console.log(c.bold.red('Fetch Error >'), queueItem.url);
+          });
+        });
+        crawler.on("fetchtimeout", function (queueItem: any, timeoutVal: any) {
+          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+            if (err) throw err;
+            console.log(c.bold.red('Fetch Timeout Error >'), queueItem.url);
+          });
+        });
+        /* testar nas universidades para saber se vale a pena ter isto
+        crawler.on("fetchclienterror", function(queueItem: any, error: any) {
+          crawler.stop();
+          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+            if (err) throw err;
+            console.log(c.bold.red('Fetch Client Error >'), queueItem.url);
+          });
+          console.log('> Fetch Client Error at', url,'with',urls.length,'urls found');
+          resolve(urls);
+        });*/
+        crawler.on('complete', function () {
+          crawler.stop();
+          console.log('> Crawling complete at', url,'with',urls.length,'urls found');
+          resolve(urls);
+        });
+        crawler.addFetchCondition(function(parsedURL: any) {
+          if (parsedURL.path.match(/\.(css|jpg|jpeg|gif|svg|pdf|docx|js|png|ico|xml|mp4|mp3|mkv|wav|rss|php|json)/i)) {
+              return false;
+          }
+          return true;
+        });
+        crawler.maxDepth = 2;
+        crawler.start();
+      });
+      let element, responseText;
+      for await (let link of urls){
+        html = null;
+        element = null;
+        await fetch(link, {size: 5000000})
+          .then(async (response: any) => {
+            if (await response.ok) {
+              responseText = await response.text();
+              //console.log(link, c.green('ok'));
+              html = parse(responseText);
+              element = await html.querySelectorAll(".mr.mr-e-name,.basic-information.organization-name");
+              if(await element.length){
+                fs.appendFile('as_urls.txt', link.concat('\n'), function (err) {
+                  if (err) throw err;
+                  console.log(c.bold.green('### Found an Accessibility Statement'));
+                });
+              }
+            } else {
+              //console.log(link, c.red('oops'));
+            }
+          })
+          .catch((err: any) => {
+            console.log(c.red(err));
+            fs.appendFile('failed_urls.txt', link.concat('\n'), function (err) {
+              if (err) throw err;
+              console.log(c.bold.red('### Saved -'), link);
+          });
+        });
+      }
+      console.log(c.green('# Done'), url);
+    }
+  }
+}
+
+async function readFilesFromDirname(dirname: string) {
+  return new Promise((resolve, reject) => {
+    fs.readdir(dirname, function(err, filenames) {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      let list = [];
+      for(let filename of filenames){
+        list.push(readFile(dirname,filename))
+      }
+      resolve(Promise.all(list))
+    });
+  });
+}
+
+async function readFile(dirname: string, filename: string){
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.resolve(dirname, filename), 'utf-8', function(err, content) {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      resolve(<string>content);
+    });
+  });   
+} 
+
+function randomString(len: number, an?: string) {
+  an = an && an.toLowerCase();
+  var str = "",
+    i = 0,
+    min = an == "a" ? 10 : 0,
+    max = an == "n" ? 10 : 62;
+  for (; i++ < len;) {
+    var r = Math.random() * (max - min) + min << 0;
+    str += String.fromCharCode(r += r > 9 ? r < 36 ? 55 : 61 : 48);
+  }
+  return str;
+}
+
+export { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel };

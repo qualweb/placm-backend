@@ -1,11 +1,11 @@
+import { success, error } from "../lib/responses";
 import { execute_query_proto } from "../lib/database";
-import { error, success } from "../lib/responses";
 
-const get_data_by_evaluation_tool = async () => {
-let query;
+const get_all_data = async () => {
+  let query;
   try {
     query =
-    `SELECT et.Name as name,
+    `SELECT r.Name as name,
       COUNT(DISTINCT a.AssertionId) as nAssertions,
       COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
       COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
@@ -13,12 +13,12 @@ let query;
       COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
       COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
     FROM
-      EvaluationTool et
+      Rule r
     INNER JOIN
       Page p
         ON p.Deleted = '0'
     INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome, a.EvaluationToolId
+    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
       FROM
         Assertion a
       WHERE
@@ -26,13 +26,14 @@ let query;
         AND a.Deleted = '0'
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
-    WHERE et.EvaluationToolId = a.EvaluationToolId
-    GROUP BY et.EvaluationToolId;`;
+    WHERE r.RuleId = a.RuleId
+    GROUP BY a.RuleId;`;
     let result = (await execute_query_proto(query));
-    return success(result);
+    return success(<any> result);
   } catch(err){
+    console.log(err);
     return error(err);
   }
 }
 
-export {get_data_by_evaluation_tool};
+export {get_all_data};

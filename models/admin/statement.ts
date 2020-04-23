@@ -3,7 +3,7 @@ import { add_earl_report } from "./report";
 import { parse } from 'node-html-parser';
 import { twitterRegex, emailRegex, telephoneRegex } from "../../lib/constants";
 import { setCharAt, readyStringToQuery, readyUrlToQuery } from "../../lib/util";
-import execute_query = require("../../lib/database");
+import { execute_query } from "../../lib/database";
 import { error, success } from "../../lib/responses";
 
 const fetch = require("node-fetch");
@@ -68,10 +68,11 @@ const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: s
 
   for(let i = 0; i < statements.length; i++){
     /* ---------- handle organization name ---------- */
-    orgElem = statements[i].querySelectorAll(".lowFL");
+    orgElem = statements[i].querySelectorAll(".mr.mr-e-name");
     if(orgElem.length){
-      let orgSiblingIndex = orgElem[0].parentNode.childNodes.indexOf(orgElem[0]) + 2;
-      organization = orgElem[0].parentNode.childNodes[orgSiblingIndex].text;
+      /*lowFl - let orgSiblingIndex = orgElem[0].parentNode.childNodes.indexOf(orgElem[0]) + 2;
+      organization = orgElem[0].parentNode.childNodes[orgSiblingIndex].text;*/
+      organization = orgElem[0].childNodes[0].text;
     } else {
       orgElem = statements[i].querySelectorAll(".basic-information.organization-name");
       if(orgElem.length){
@@ -105,7 +106,7 @@ const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: s
     if(stateElem.length){
       stateString = stateElem[0].text.toLowerCase();
     } else {
-      stateElem = statements[i].querySelectorAll(".basic-information,conformance-status");
+      stateElem = statements[i].querySelectorAll(".basic-information.conformance-status");
       if(stateElem.length){
         stateString = stateElem[0].text.toLowerCase();
       }
@@ -142,8 +143,9 @@ const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: s
     /* ---------- handle standard ---------- */
     standardElem = statements[i].querySelectorAll(".basic-information.conformance-standard");
     if(standardElem.length){
-      standardText = standardElem[0].text;
-      standardText = standardText.substring(0, standardText.length - 1);
+      //standardText = standardElem[0].text;
+      standardText = standardElem[0].childNodes[0].text;
+      //standardText = standardText.substring(0, standardText.length - 1);
       standardNumber = standardText.split(" ")[1];
       if(standardNumber === "2.1" || standardNumber === "2.0"){
         standard = standardNumber;

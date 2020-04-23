@@ -10,8 +10,14 @@ const debug = require('debug')('placm-backend:server');
 
 import protoRouter from "./routes/admin/proto";
 import countryRouter from "./routes/country";
-import adminReportRouter from "./routes/admin/report"
-import adminStatementRouter from "./routes/admin/statement"
+import tagRouter from './routes/tag';
+import applicationRouter from './routes/application';
+import pageRouter from './routes/page';
+import ruleRouter from './routes/rule';
+import evaluationRouter from './routes/evaluation';
+import adminReportRouter from "./routes/admin/report";
+import adminStatementRouter from "./routes/admin/statement";
+
 
 const app = express();
 app.use(compression());
@@ -25,6 +31,12 @@ app.use(expressValidator());
 
 app.use('/proto', protoRouter);
 app.use('/country', countryRouter);
+app.use('/tag', tagRouter);
+app.use('/application', applicationRouter);
+app.use('/page', pageRouter);
+app.use('/rule', ruleRouter);
+app.use('/evaluation', evaluationRouter);
+
 app.use('/admin/report', adminReportRouter);
 app.use('/admin/statement', adminStatementRouter);
 
@@ -43,7 +55,7 @@ app.use(function(err: any, req: any, res: any, next: any) {
  * * * SERVER INITIALIZATION * * * *
  * * * * * * * * * * * * * * * * * *
  */
-const port = process.env.PORT || '3443';
+const port = process.env.PORT || '3000';
 app.set('port', port);
 const server = http.createServer(app);
 server.listen(port);
