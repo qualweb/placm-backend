@@ -55,7 +55,7 @@ app.use(function(err: any, req: any, res: any, next: any) {
  * * * SERVER INITIALIZATION * * * *
  * * * * * * * * * * * * * * * * * *
  */
-const port = process.env.PORT || '3000';
+const port = process.env.PORT || '3443';
 app.set('port', port);
 const server = http.createServer(app);
 server.listen(port);

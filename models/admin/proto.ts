@@ -1,13 +1,11 @@
 import { success, error } from "../../lib/responses";
 import { execute_query_proto } from "../../lib/database";
-import { COUNTRY_JSON } from "../../lib/constants";
+import { COUNTRY_JSON, CONSTELLATIONS_JSON } from "../../lib/constants";
 import * as fs from 'fs';
-import { trim, includes } from "lodash";
+import { trim, includes, map } from "lodash";
 import path from "path";
 import puppeteer from "puppeteer";
-import { url } from "inspector";
 import { parse } from 'node-html-parser';
-import { start } from "repl";
 
 const excelToJson = require('convert-excel-to-json');
 let Crawler = require('simplecrawler');
@@ -24,6 +22,7 @@ const add_filedata = async () => {
     evaluationTools: [],
     rules: [],
     applications: [],
+    organizations: [],
     pages: [],
     assertions: [],
     tagApps: []
@@ -91,15 +90,22 @@ const add_filedata = async () => {
     }
 
     let appName, appUrl, appDate, appId;
+    let organization;
     let tagId;
     let evaluationToolId;
     let pageUrl, pageId;
     let assertionDesc, assertionOutcome;
     let outcomes = ['passed', 'failed', 'cantTell', 'inapplicable', 'untested'];
+    let orgsExtensions = ['Corp.', 'Org.', 'Inc.'];
+    let possibleAppNames = map(CONSTELLATIONS_JSON, 'name');
 
-    for(let i = 0; i <= numberApps; i++) {
+    for(let i = 0; i < numberApps; i++) {
       // Application
-      appName = randomWords({ exactly: 2, join: ' ' });
+      //appName = randomWords({ exactly: 2, join: ' ' });
+      let randomIndex = Math.floor(Math.random()*possibleAppNames.length);
+      appName = possibleAppNames[randomIndex];
+      possibleAppNames.splice(randomIndex, 1);
+
       appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
       appDate = '2020-0'.concat(Math.floor(Math.random()*10).toString())
           .concat('-')
@@ -109,8 +115,19 @@ const add_filedata = async () => {
       query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
       app = (await execute_query_proto(query))[0];
       if (!app) {
-        query = `INSERT INTO Application (name, organization, type, sector, url, creationdate, countryid)
-            VALUES ("${appName}", "${randomString(15, 'a')}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
+        let organizationName = randomWords({ exactly: 1 })[0];
+        organizationName = organizationName.charAt(0).toUpperCase() + organizationName.slice(1);
+        organizationName = organizationName.concat(' ').concat(orgsExtensions[Math.floor(Math.random()*3)]);
+        query = `SELECT OrganizationId FROM Organization WHERE name = "${organizationName}";`;
+        organization = (await execute_query_proto(query))[0];
+        if(!organization){
+          query = `INSERT INTO Organization (name)
+            VALUES ("${organizationName}");`;
+            organization = await execute_query_proto(query);
+          result.organizations.push(organizationName);         
+        }
+        query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
+            VALUES ("${appName}", "${organization.OrganizationId ? organization.OrganizationId : organization.insertId}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
         app = await execute_query_proto(query);
         result.applications.push(app.insertId);
       };
@@ -132,7 +149,8 @@ const add_filedata = async () => {
       evaluationToolId = Math.floor(Math.random()*3)+1;
 
       // Page
-      for(let j = 0; j <= numberPages; j++) {
+      //for(let j = 0; j < numberPages; j++) {
+      for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
         pageUrl = appUrl.concat('/').concat(randomString(10));
         query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
         page = (await execute_query_proto(query))[0];
@@ -146,7 +164,6 @@ const add_filedata = async () => {
 
         // Assertion
         for(let r = 1; r <= numberTools; r++) {
-
           assertionDesc = randomString(15,'a');
           assertionOutcome = outcomes[Math.floor(Math.random()*5)];
 
@@ -175,25 +192,29 @@ const add_filedata = async () => {
 
 const add_countries = async () => {
   let result: any = {
-    entries: [],
     countries: [],
     continents: []
   };
 
-  let query, country;
+  let query, country, continent;
 
   try {
     for (let c of Object.values(COUNTRY_JSON)) {
       query = `SELECT Name FROM Country WHERE name = "${c.country}";`;
       country = (await execute_query_proto(query))[0];
       if (!country && c.country) {
-        query = `INSERT INTO Country (name, continent)
-            VALUES ("${c.country}", "${c.continent}");`;
+        query = `SELECT ContinentId FROM Continent WHERE name = "${c.continent}";`;
+        continent = (await execute_query_proto(query))[0];
+        if(!continent){
+          query = `INSERT INTO Continent (name)
+            VALUES ("${c.continent}");`;
+          continent = await execute_query_proto(query);
+          result.continents.push(c.continent);         
+        }
+        query = `INSERT INTO Country (name, continentId)
+          VALUES ("${c.country}", "${continent.ContinentId ? continent.ContinentId : continent.insertId}");`;
         country = await execute_query_proto(query);
-        result.entries.push(country.insertId);
-        result.countries.push(c.country);
-        if (result.continents.indexOf(c.continent) === -1)
-          result.continents.push(c.continent);
+        result.countries.push(c.country);   
       }
     }
   } catch (err) {
@@ -432,6 +453,7 @@ async function add_as_from_links_excel() {
   });
   const page = await browser.newPage();*/
 
+  // Transforming excel into json object
   let workbook = excelToJson({
     sourceFile: 'lib/urls_portugal_2020.xlsx',
     header: {
@@ -458,26 +480,28 @@ async function add_as_from_links_excel() {
     }
   }
 
-  /*fs.writeFile('lib/new_urls.txt', excelLinks, (err) => {
+  fs.writeFile('lib/new_urls.txt', excelLinks, (err) => {
     if (err) console.log(err);
     console.log('New urls saved!');
-  });*/
+  });
 
   let newurls: string | null;
-  newurls = await new Promise((resolve, reject) => {
+  /*newurls = await new Promise((resolve, reject) => {
     fs.readFile('lib/new_urls.txt', function (err, data) {
       if (err) {
         resolve(null);
       }
       resolve(data.toString());
     });
-  });
+  });*/
+  newurls = "https://www.defesa.pt/";
 
   let crawler: any;
   if(typeof newurls === 'string'){
     if(newurls.endsWith('\n')){
       newurls = newurls.substring(0,newurls.length-1);
     }
+    // -- Actively searching for links in the first level of each link --
     for await(let url of newurls.split('\n')){
       index = 0;
       urls = [];
@@ -486,12 +510,13 @@ async function add_as_from_links_excel() {
       }
       urls = await new Promise((resolve, reject) => {
         crawler = new Crawler(url);
+        crawler.allowInitialDomainChange = true;
         crawler.on("crawlstart", function() {
           console.log(c.bold.blue('Starting >'), url);
         });
         crawler.on("fetchcomplete", function(queueItem: any) {
           urls.push(queueItem.url);
-          //console.log(queueItem.url);
+          console.log(queueItem.url);
         });
         crawler.on("fetcherror", function (queueItem: any, responseBuffer: any) {
           fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
@@ -505,6 +530,9 @@ async function add_as_from_links_excel() {
             console.log(c.bold.red('Fetch Timeout Error >'), queueItem.url);
           });
         });
+        crawler.on("fetchredirect", function(queueItem: any, parsedURL: any) {
+          console.log("I just received a redirect from %s to domain %s",queueItem.url, parsedURL.host);
+        });
         /* testar nas universidades para saber se vale a pena ter isto
         crawler.on("fetchclienterror", function(queueItem: any, error: any) {
           crawler.stop();
@@ -517,6 +545,9 @@ async function add_as_from_links_excel() {
         });*/
         crawler.on('complete', function () {
           crawler.stop();
+          if(!urls.some(u => u.includes('/acessibilidade'))){
+            urls.push(url[url.length-1] === '/' ? url.concat('acessibilidade') : url.concat('/acessibilidade'));
+          }
           console.log('> Crawling complete at', url,'with',urls.length,'urls found');
           resolve(urls);
         });
@@ -529,6 +560,8 @@ async function add_as_from_links_excel() {
         crawler.maxDepth = 2;
         crawler.start();
       });
+
+      // -- Searching for accessibility statements --
       let element, responseText;
       for await (let link of urls){
         html = null;

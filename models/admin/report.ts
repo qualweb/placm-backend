@@ -1,4 +1,4 @@
-import execute_query = require("../../lib/database");
+import { execute_query } from "../../lib/database";
 import { findAssertions } from "../../lib/earl/find_assertions";
 import { error, success } from "../../lib/responses";
 import { EarlAssertion } from "../../lib/earl/earl_types";
@@ -37,6 +37,7 @@ const add_earl_report = async (...jsons: string[]) => {
   let index = 0;
   try {
     for (let assertion of assertions) {
+      if(assertion){
       //console.log(index);
       index++;
 
@@ -87,7 +88,7 @@ const add_earl_report = async (...jsons: string[]) => {
       }
 
       /* ---------- handle website/app ---------- */
-      websiteUrl = regulateStringLength(urlRegexMatch[3]);
+      websiteUrl = regulateStringLength(urlRegexMatch ? urlRegexMatch[3] : "");
       websiteName = regulateStringLength(websiteUrl.split(".")[0]);
 
       query = `SELECT ApplicationId FROM Application WHERE url = "${websiteUrl}";`;
@@ -140,6 +141,7 @@ const add_earl_report = async (...jsons: string[]) => {
         assertionSQL = await execute_query(query);
         result.assertion.push(assertionSQL.insertId);
       }
+    }
     }
   } catch (err) {
     console.log(err);

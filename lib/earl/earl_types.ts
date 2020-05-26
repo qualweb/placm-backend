@@ -32,10 +32,11 @@ export type EarlTestResult = {
 export type EarlAssertion = {
   '@type'?: 'earl:Assertion'
   '@id'?: string
-  subject?: EarlTestSubject | string
-  test?: EarlTest | string
+  subject?: any //EarlTestSubject | string
+  test?: any //EarlTest | string
   'wcagem-test'?: EarlTest | string
-  result?: EarlTestResult
+  result?: any //EarlTestResult
+  mode?: any
 }
 
 export type AssertionGraph = {

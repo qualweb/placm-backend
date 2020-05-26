@@ -25,7 +25,7 @@ router.post('/addCountries', async function (req, res, next) {
   }
 });
 
-router.post('/findASLinks', async function (req, res, next) {
+router.get('/findASLinks', async function (req, res, next) {
   try {
       await add_as_from_links_excel()
       .then((result: any) => res.send(result))

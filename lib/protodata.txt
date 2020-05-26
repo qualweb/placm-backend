@@ -11,22 +11,22 @@ Tag
 Media
 
 EvaluationTool
-QualWeb
--
-Pretending to be Portuguese Accessibility Evaluator
+Jupiter
+https://www.jupiter.proto.org/
+The biggest planet in the Solar System
 1.0.0
 
 EvaluationTool
-axe
-https://www.deque.com/axe/
-Pretending to be another Accessibility Evaluator
+Mercury
+https://www.mercury.proto.org/
+The smallest planet in the Solar System
 1.0.0
 
 EvaluationTool
-Peakaboo
-https://not-at-all-a-real-url.com
-Mock-up accessbility evaluator
-0.0.1
+Earth
+https://www.earth.proto.org/
+Our planet in the Solar System
+1.0.1
 
 Rule
 Button has accessible name

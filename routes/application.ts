@@ -1,11 +1,12 @@
 import express from "express";
-import { get_data_by_sector, get_data_by_type, get_data_by_name } from "../models/application";
+import { get_app_data_filtered, get_sector_data_filtered, get_org_data_filtered } from "../models/application";
 
 const router = express.Router();
 
-router.get('/bySector', async function (req, res, next) {
+router.get('/appDataFiltered', async function (req, res, next) {
   try {
-      await get_data_by_sector()
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_app_data_filtered(filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -14,9 +15,10 @@ router.get('/bySector', async function (req, res, next) {
   }
 });
 
-router.get('/byType', async function (req, res, next) {
+router.get('/sectorDataFiltered', async function (req, res, next) {
   try {
-      await get_data_by_type()
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_sector_data_filtered(filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -25,9 +27,10 @@ router.get('/byType', async function (req, res, next) {
   }
 });
 
-router.get('/byName', async function (req, res, next) {
+router.get('/orgDataFiltered', async function (req, res, next) {
   try {
-      await get_data_by_name()
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_org_data_filtered(filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
