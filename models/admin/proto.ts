@@ -35,8 +35,7 @@ const add_filedata = async () => {
   const numberTools = 5;
   // todo arranjar numberTools para ir buscar atraves de um select
 
-  let line;
-  for(let entry of PROTODATA_JSON){
+  for(let entry of Object.values(PROTODATA_JSON)){
     switch(entry['type']){
       case 'Tag':
           query = `SELECT TagId FROM Tag WHERE name = "${entry['name']}";`;
@@ -137,7 +136,7 @@ const add_filedata = async () => {
       query = `INSERT INTO TagApplication (TagId, ApplicationId)
           VALUES ("${tagId}", "${appId}");`;
         tagapp = await execute_query_proto(query);
-      result.tagApps.push(tagapp.insertId);
+      result.tagApps.push([tagId, appId]);
     };
 
     evaluationToolId = Math.floor(Math.random()*3)+1;
