@@ -59,7 +59,7 @@ const get_data_by_country = async () => {
       FROM
         Assertion a
       WHERE
-        date = (SELECT max(a1.Date) FROM assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
         AND a.Deleted = '0'
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
@@ -119,9 +119,9 @@ const get_data_continent = async () => {
     INNER JOIN
     (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
       FROM
-        assertion a
+        Assertion a
       WHERE
-        date = (SELECT max(a1.Date) FROM assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
         AND a.Deleted = '0'
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
@@ -135,6 +135,7 @@ const get_data_continent = async () => {
 }
 
 const get_data_country_filtered = async (filters: any) => {
+  console.log("ola");
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT c.CountryId as id, 
@@ -178,9 +179,9 @@ const get_data_country_filtered = async (filters: any) => {
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome
     FROM
-      assertion a
+      Assertion a
     WHERE
-      date = (SELECT max(a1.Date) FROM assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+      date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
       AND a.Deleted = '0'
     ORDER BY date DESC) a
       ON a.PageId = p.PageId

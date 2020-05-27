@@ -22,7 +22,7 @@ const get_all_data = async () => {
       FROM
         Assertion a
       WHERE
-        date = (SELECT max(a1.Date) FROM assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
         AND a.Deleted = '0'
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
@@ -78,7 +78,7 @@ const get_data_rule_filtered = async (filters: any) => {
     FROM
       Assertion a
     WHERE
-      date = (SELECT max(a1.Date) FROM assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+      date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
       AND a.Deleted = '0'
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
