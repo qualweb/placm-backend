@@ -1,6 +1,6 @@
 import { success, error } from "../../lib/responses";
 import { execute_query_proto } from "../../lib/database";
-import { COUNTRY_JSON, CONSTELLATIONS_JSON } from "../../lib/constants";
+import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON } from "../../lib/constants";
 import * as fs from 'fs';
 import { trim, includes, map } from "lodash";
 import path from "path";
@@ -36,158 +36,150 @@ const add_filedata = async () => {
   // todo arranjar numberTools para ir buscar atraves de um select
 
   let line;
-  fs.readFile('./lib/protodata.txt', async function (err, data) {
-    if (err) {
-      console.error(err);
-    }
-    entries = data.toString().split('\r\n\r\n');
-    for (let entry of entries) {
-      line = trim(entry).split('\r\n');
-      switch (line[0]) {
-        case 'Tag':
-          query = `SELECT TagId FROM Tag WHERE name = "${line[1]}";`;
+  for(let entry of PROTODATA_JSON){
+    switch(entry['type']){
+      case 'Tag':
+          query = `SELECT TagId FROM Tag WHERE name = "${entry['name']}";`;
           tag = (await execute_query_proto(query))[0];
           if (!tag) {
             query = `INSERT INTO Tag (name)
-                VALUES ("${line[1]}");`;
+                VALUES ("${entry['name']}");`;
             tag = await execute_query_proto(query);
             result.tags.push(tag.insertId);
           };
           break;
         case 'EvaluationTool':
-          query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${line[1]}";`;
+          query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${entry['name']}";`;
           evalTool = (await execute_query_proto(query))[0];
           if (!evalTool) {
-            if(line[2] === '-'){
+            if(entry['data1'] === ''){
               url = null;
             } else {
-              url = '"'.concat(line[2],'"');
+              url = '"'.concat(entry['data1'],'"');
             }
             query = `INSERT INTO EvaluationTool (name, url, description, version)
-                VALUES ("${line[1]}", ${url}, "${line[3]}", "${line[4]}");`;
+                VALUES ("${entry['name']}", ${url}, "${entry['data2']}", "${entry['data3']}");`;
             evalTool = await execute_query_proto(query);
             result.evaluationTools.push(evalTool.insertId);
           };
           break;
         case 'Rule':
-          query = `SELECT RuleId FROM Rule WHERE name = "${line[1]}";`;
+          query = `SELECT RuleId FROM Rule WHERE name = "${entry['name']}";`;
           rule = (await execute_query_proto(query))[0];
           if (!rule) {
-            if(line[2] === '-'){
+            if(entry['data1'] === ''){
               url = null;
             } else {
-              url = '"'.concat(line[2],'"');
+              url = '"'.concat(entry['data1'],'"');
             }
             query = `INSERT INTO Rule (name, url, description)
-                VALUES ("${line[1]}", ${url}, "${line[3]}");`;
+                VALUES ("${entry['name']}", ${url}, "${entry['data2']}");`;
             rule = await execute_query_proto(query);
             result.rules.push(rule.insertId);
           };
           break;
         default:
           break;
-      }
     }
+  }
 
-    let appName, appUrl, appDate, appId;
-    let organization;
-    let tagId;
-    let evaluationToolId;
-    let pageUrl, pageId;
-    let assertionDesc, assertionOutcome;
-    let outcomes = ['passed', 'failed', 'cantTell', 'inapplicable', 'untested'];
-    let orgsExtensions = ['Corp.', 'Org.', 'Inc.'];
-    let possibleAppNames = map(CONSTELLATIONS_JSON, 'name');
+  let appName, appUrl, appDate, appId;
+  let organization;
+  let tagId;
+  let evaluationToolId;
+  let pageUrl, pageId;
+  let assertionDesc, assertionOutcome;
+  let outcomes = ['passed', 'failed', 'cantTell', 'inapplicable', 'untested'];
+  let orgsExtensions = ['Corp.', 'Org.', 'Inc.'];
+  let possibleAppNames = map(CONSTELLATIONS_JSON, 'name');
 
-    for(let i = 0; i < numberApps; i++) {
-      // Application
-      //appName = randomWords({ exactly: 2, join: ' ' });
-      let randomIndex = Math.floor(Math.random()*possibleAppNames.length);
-      appName = possibleAppNames[randomIndex];
-      possibleAppNames.splice(randomIndex, 1);
+  for(let i = 0; i < numberApps; i++) {
+    // Application
+    //appName = randomWords({ exactly: 2, join: ' ' });
+    let randomIndex = Math.floor(Math.random()*possibleAppNames.length);
+    appName = possibleAppNames[randomIndex];
+    possibleAppNames.splice(randomIndex, 1);
 
-      appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
-      appDate = '2020-0'.concat(Math.floor(Math.random()*10).toString())
-          .concat('-')
-          .concat(Math.floor(Math.random()*3).toString())
-          .concat(Math.floor(Math.random()*10).toString())
-          .concat(' 00:00:00');
-      query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
-      app = (await execute_query_proto(query))[0];
-      if (!app) {
-        let organizationName = randomWords({ exactly: 1 })[0];
-        organizationName = organizationName.charAt(0).toUpperCase() + organizationName.slice(1);
-        organizationName = organizationName.concat(' ').concat(orgsExtensions[Math.floor(Math.random()*3)]);
-        query = `SELECT OrganizationId FROM Organization WHERE name = "${organizationName}";`;
-        organization = (await execute_query_proto(query))[0];
-        if(!organization){
-          query = `INSERT INTO Organization (name)
-            VALUES ("${organizationName}");`;
-            organization = await execute_query_proto(query);
-          result.organizations.push(organizationName);         
-        }
-        query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
-            VALUES ("${appName}", "${organization.OrganizationId ? organization.OrganizationId : organization.insertId}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
-        app = await execute_query_proto(query);
-        result.applications.push(app.insertId);
+    appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
+    appDate = '2020-0'.concat(Math.floor(Math.random()*10).toString())
+        .concat('-')
+        .concat(Math.floor(Math.random()*3).toString())
+        .concat(Math.floor(Math.random()*10).toString())
+        .concat(' 00:00:00');
+    query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
+    app = (await execute_query_proto(query))[0];
+    if (!app) {
+      let organizationName = randomWords({ exactly: 1 })[0];
+      organizationName = organizationName.charAt(0).toUpperCase() + organizationName.slice(1);
+      organizationName = organizationName.concat(' ').concat(orgsExtensions[Math.floor(Math.random()*3)]);
+      query = `SELECT OrganizationId FROM Organization WHERE name = "${organizationName}";`;
+      organization = (await execute_query_proto(query))[0];
+      if(!organization){
+        query = `INSERT INTO Organization (name)
+          VALUES ("${organizationName}");`;
+          organization = await execute_query_proto(query);
+        result.organizations.push(organizationName);         
+      }
+      query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
+          VALUES ("${appName}", "${organization.OrganizationId ? organization.OrganizationId : organization.insertId}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
+      app = await execute_query_proto(query);
+      result.applications.push(app.insertId);
+    };
+    appId = app.insertId || app.ApplicationId;
+
+    // TagApplication
+    tagId = Math.floor(Math.random()*4)+1;
+    query = `SELECT TagId FROM TagApplication WHERE 
+              TagId = "${tagId}" AND
+              ApplicationId = "${appId}";`;
+    tagapp = (await execute_query_proto(query))[0];
+    if (!tagapp) {
+      query = `INSERT INTO TagApplication (TagId, ApplicationId)
+          VALUES ("${tagId}", "${appId}");`;
+        tagapp = await execute_query_proto(query);
+      result.tagApps.push(tagapp.insertId);
+    };
+
+    evaluationToolId = Math.floor(Math.random()*3)+1;
+
+    // Page
+    //for(let j = 0; j < numberPages; j++) {
+    for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
+      pageUrl = appUrl.concat('/').concat(randomString(10));
+      query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
+      page = (await execute_query_proto(query))[0];
+      if (!page) {
+        query = `INSERT INTO Page (url, creationdate, applicationid)
+            VALUES ("${pageUrl}", "${appDate}", "${appId}");`;
+        page = await execute_query_proto(query);
+        result.pages.push(page.insertId);
       };
-      appId = app.insertId || app.ApplicationId;
+      pageId = page.insertId || page.PageId;
 
-      // TagApplication
-      tagId = Math.floor(Math.random()*4)+1;
-      query = `SELECT TagId FROM TagApplication WHERE 
-                TagId = "${tagId}" AND
-                ApplicationId = "${appId}";`;
-      tagapp = (await execute_query_proto(query))[0];
-      if (!tagapp) {
-        query = `INSERT INTO TagApplication (TagId, ApplicationId)
-            VALUES ("${tagId}", "${appId}");`;
-          tagapp = await execute_query_proto(query);
-        result.tagApps.push(tagapp.insertId);
-      };
+      // Assertion
+      for(let r = 1; r <= numberTools; r++) {
+        assertionDesc = randomString(15,'a');
+        assertionOutcome = outcomes[Math.floor(Math.random()*5)];
 
-      evaluationToolId = Math.floor(Math.random()*3)+1;
-
-      // Page
-      //for(let j = 0; j < numberPages; j++) {
-      for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
-        pageUrl = appUrl.concat('/').concat(randomString(10));
-        query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
-        page = (await execute_query_proto(query))[0];
-        if (!page) {
-          query = `INSERT INTO Page (url, creationdate, applicationid)
-              VALUES ("${pageUrl}", "${appDate}", "${appId}");`;
-          page = await execute_query_proto(query);
-          result.pages.push(page.insertId);
+        query = `SELECT AssertionId FROM Assertion WHERE 
+              evaluationtoolid = "$evaluationToolId}" AND
+              ruleid = "${r}" AND
+              pageid = "${pageId}" AND
+              mode = "automatic" AND
+              date = "${appDate}" AND
+              description = "${assertionDesc}" AND
+              outcome = "${assertionOutcome}";`;
+        assertion = (await execute_query_proto(query))[0];
+        if (!assertion) {
+          query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
+              VALUES ("${evaluationToolId}", "${r}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
+          assertion = await execute_query_proto(query);
+          result.assertions.push(assertion.insertId);
         };
-        pageId = page.insertId || page.PageId;
-
-        // Assertion
-        for(let r = 1; r <= numberTools; r++) {
-          assertionDesc = randomString(15,'a');
-          assertionOutcome = outcomes[Math.floor(Math.random()*5)];
-
-          query = `SELECT AssertionId FROM Assertion WHERE 
-                evaluationtoolid = "$evaluationToolId}" AND
-                ruleid = "${r}" AND
-                pageid = "${pageId}" AND
-                mode = "automatic" AND
-                date = "${appDate}" AND
-                description = "${assertionDesc}" AND
-                outcome = "${assertionOutcome}";`;
-          assertion = (await execute_query_proto(query))[0];
-          if (!assertion) {
-            query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
-                VALUES ("${evaluationToolId}", "${r}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
-            assertion = await execute_query_proto(query);
-            result.assertions.push(assertion.insertId);
-          };
-        }
       }
     }
-    
-    return success(result);
-  });
+  }
+  return success(result);
 };
 
 const add_countries = async () => {
