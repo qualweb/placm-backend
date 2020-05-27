@@ -100,7 +100,7 @@ const add_filedata = async () => {
     possibleAppNames.splice(randomIndex, 1);
 
     appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
-    appDate = '2020-0'.concat(Math.floor(Math.random()*10).toString())
+    appDate = '2020-0'.concat((Math.floor(Math.random()*9)+1).toString())
         .concat('-')
         .concat(Math.floor(Math.random()*3).toString())
         .concat(Math.floor(Math.random()*10).toString())
