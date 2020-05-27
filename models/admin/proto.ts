@@ -36,7 +36,7 @@ const add_filedata = async () => {
   // todo arranjar numberTools para ir buscar atraves de um select
 
   let line;
-  fs.readFile('lib/protodata.txt', async function (err, data) {
+  fs.readFile('./lib/protodata.txt', async function (err, data) {
     if (err) {
       console.error(err);
     }

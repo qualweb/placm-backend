@@ -7,9 +7,9 @@
     "tsc": "tsc",
     "clean": "node clean",
     "build": "npm run clean && tsc --build",
-    "start-dev": "ts-node-dev --respawn --transpileOnly ./index.ts",
-    "start": "npm run build && NODE_ENV=production && node ./build/index",
-    "start-win": "npm run build && set NODE_ENV=production && node ./build/index"
+    "start:dev": "ts-node-dev --respawn --transpileOnly ./index.ts",
+    "start": "npm run build && NODE_ENV=production && node ./dist/index",
+    "start:win": "npm run build && set NODE_ENV=production && node ./dist/index"
   },
   "keywords": [
     "placm",
