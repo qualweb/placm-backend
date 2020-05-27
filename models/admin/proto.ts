@@ -103,7 +103,7 @@ const add_filedata = async () => {
     appDate = '2020-0'.concat((Math.floor(Math.random()*9)+1).toString())
         .concat('-')
         .concat(Math.floor(Math.random()*3).toString())
-        .concat(Math.floor(Math.random()*10).toString())
+        .concat((Math.floor(Math.random()*9)+1).toString())
         .concat(' 00:00:00');
     query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
     app = (await execute_query_proto(query))[0];
