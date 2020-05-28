@@ -97,7 +97,7 @@ const get_data_filtered = async (filters: any) => {
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN ("${filters.continentIds}")`);
+        AND c.ContinentId IN (${filters.continentIds})`);
   }
 
   query = query.concat(`

@@ -184,12 +184,12 @@ const get_app_data_filtered = async (filters: any) => {
         AND ta.TagId IN (${filters.tagIds})`);
   }
 
-  if(filters.continents){
+  if(filters.continentIds){
     query = query.concat(`
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN ("${filters.continentIds}")`);
+        AND c.ContinentId IN (${filters.continentIds})`);
   }
 
   query = query.concat(`
@@ -217,7 +217,7 @@ const get_app_data_filtered = async (filters: any) => {
   }
   if(filters.orgIds){
     query = query.concat(`
-    AND app.OrganizationId IN ("${filters.orgIds}")`);
+    AND app.OrganizationId IN (${filters.orgIds})`);
   }
   query = query.concat(`
   GROUP BY app.Name, app.ApplicationId;`);
@@ -260,7 +260,7 @@ const get_sector_data_filtered = async (filters: any) => {
       INNER JOIN
         Country c
           ON c.CountryId = app.CountryId
-          AND c.ContinentId IN ("${filters.continentIds}")`);
+          AND c.ContinentId IN (${filters.continentIds})`);
     }
   
     query = query.concat(`
@@ -330,7 +330,7 @@ const get_org_data_filtered = async (filters: any) => {
       INNER JOIN
         Country c
           ON c.CountryId = app.CountryId
-          AND c.ContinentId IN ("${filters.continentIds}")`);
+          AND c.ContinentId IN (${filters.continentIds})`);
     }
   
     query = query.concat(`

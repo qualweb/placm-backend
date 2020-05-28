@@ -60,12 +60,12 @@ const get_data_evaluation_tool_filtered = async (filters: any) => {
         AND ta.TagId IN (${filters.tagIds})`);
   }
 
-  if(filters.continents){
+  if(filters.continentIds){
     query = query.concat(`
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN ("${filters.continentIds}")`);
+        AND c.ContinentId IN (${filters.continentIds})`);
   }
 
   query = query.concat(`
@@ -86,7 +86,7 @@ const get_data_evaluation_tool_filtered = async (filters: any) => {
 
   if(filters.appIds){
     query = query.concat(`
-    AND app.ApplicationId IN ("${filters.appIds}")`);
+    AND app.ApplicationId IN (${filters.appIds})`);
   }
   if(filters.countryIds){
     query = query.concat(`
@@ -98,7 +98,7 @@ const get_data_evaluation_tool_filtered = async (filters: any) => {
   }
   if(filters.orgIds){
     query = query.concat(`
-    AND app.OrganizationId IN ("${filters.orgIds}")`);
+    AND app.OrganizationId IN (${filters.orgIds})`);
   }
   query = query.concat(`
   GROUP BY eval.Name, eval.EvaluationToolId;`);

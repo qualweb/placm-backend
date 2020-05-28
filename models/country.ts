@@ -161,7 +161,7 @@ const get_data_country_filtered = async (filters: any) => {
 
   if(filters.continentIds){
     query = query.concat(`
-    AND c.ContinentId IN ("${filters.continentIds}")`);
+    AND c.ContinentId IN (${filters.continentIds})`);
   }
 
   if(filters.tagIds){
