@@ -101,7 +101,7 @@ const get_data_evaluation_tool_filtered = async (filters: any) => {
     AND app.OrganizationId IN ("${filters.orgIds}")`);
   }
   query = query.concat(`
-  GROUP BY eval.Name;`);
+  GROUP BY eval.Name, eval.EvaluationToolId;`);
 
   try {
     let result = (await execute_query_proto(query));

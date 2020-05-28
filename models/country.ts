@@ -188,7 +188,7 @@ const get_data_country_filtered = async (filters: any) => {
   WHERE app.Deleted = '0'`);
 
   query = query.concat(`
-  GROUP BY c.Name;`);
+  GROUP BY c.Name, c.CountryId;`);
 
   try {
     let result = (await execute_query_proto(query));

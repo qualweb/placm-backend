@@ -102,7 +102,7 @@ const get_data_rule_filtered = async (filters: any) => {
     AND app.OrganizationId IN ("${filters.orgIds}")`);
   }
   query = query.concat(`
-  GROUP BY r.Name;`);
+  GROUP BY r.Name, r.RuleId;`);
 
   try {
     let result = (await execute_query_proto(query));

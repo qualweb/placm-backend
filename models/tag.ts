@@ -124,7 +124,7 @@ const get_data_filtered = async (filters: any) => {
     AND app.Sector IN (${filters.sectorIds})`);
   }
   query = query.concat(`
-  GROUP BY t.TagId;`);
+  GROUP BY t.TagId, t.Name;`);
 
   try {
     let result = (await execute_query_proto(query));

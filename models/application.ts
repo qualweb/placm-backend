@@ -220,7 +220,7 @@ const get_app_data_filtered = async (filters: any) => {
     AND app.OrganizationId IN ("${filters.orgIds}")`);
   }
   query = query.concat(`
-  GROUP BY app.Name;`);
+  GROUP BY app.Name, app.ApplicationId;`);
 
   try {
     let result = (await execute_query_proto(query));
@@ -354,7 +354,7 @@ const get_org_data_filtered = async (filters: any) => {
     }
 
     query = query.concat(`
-    GROUP BY org.Name;`);
+    GROUP BY org.Name, org.OrganizationId;`);
     
     let result = (await execute_query_proto(query));
     return success(result);
