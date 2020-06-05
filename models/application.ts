@@ -164,17 +164,34 @@ const get_data_except_id = async (ids: string[]) => {
 const get_app_data_filtered = async (filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
-  `SELECT app.Name as name,
-    app.ApplicationId as id,
-    COUNT(DISTINCT p.PageId) as nPages,
-    COUNT(DISTINCT a.AssertionId) as nAssertions,
-    COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-    COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-    COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-    COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-  FROM
-    Application app`;
+    `SELECT app.Name as name,
+      app.ApplicationId as id,
+      COUNT(DISTINCT p.PageId) as nPages,
+      COUNT(DISTINCT a.AssertionId) as nAssertions,
+      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
+      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
+      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
+      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
+      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+  if(filters.continentIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+  }
+  if(filters.countryIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+  }
+  if(filters.tagIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+  }
+  if(filters.orgIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (${filters.orgIds})) as orgNames`);
+  }
+  query = query.concat(`
+    FROM
+      Application app`);
 
   if(filters.tagIds){
     query = query.concat(`
@@ -244,9 +261,22 @@ const get_sector_data_filtered = async (filters: any) => {
       COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
       COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
       COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
+      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+    if(filters.continentIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+    }
+    if(filters.countryIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+    }
+    if(filters.tagIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+    }
+    query = query.concat(`
     FROM
-      Application app`;
+      Application app`);
 
     if(filters.tagIds){
       query = query.concat(`
@@ -255,6 +285,88 @@ const get_sector_data_filtered = async (filters: any) => {
           ON ta.ApplicationId = app.ApplicationId
           AND ta.TagId IN (${filters.tagIds})`);
     }
+    if(filters.continentIds){
+      query = query.concat(`
+      INNER JOIN
+        Country c
+          ON c.CountryId = app.CountryId
+          AND c.ContinentId IN (${filters.continentIds})`);
+    }
+  
+    query = query.concat(`
+    INNER JOIN
+      Page p
+        ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    INNER JOIN
+    (SELECT a.AssertionId, a.PageId, a.Outcome
+      FROM
+        Assertion a
+      WHERE
+        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+        AND a.Deleted = '0'
+      ORDER BY date DESC) a
+        ON a.PageId = p.PageId
+    WHERE app.Deleted = '0'`);
+
+    if(filters.countryIds){
+      query = query.concat(`
+      AND app.CountryId IN (${filters.countryIds})`);
+    }
+
+    query = query.concat(`
+    GROUP BY app.Sector;`);
+    
+    let result = (await execute_query_proto(query));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+const get_org_data_filtered = async (filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let query;
+  try {
+    query =
+    `SELECT org.OrganizationId as id,
+      org.Name as name,
+      COUNT(DISTINCT app.ApplicationId) as nApps, 
+      COUNT(DISTINCT p.PageId) as nPages,
+      COUNT(DISTINCT a.AssertionId) as nAssertions,
+      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
+      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
+      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
+      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
+      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+
+    if(filters.continentIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+    }
+    if(filters.countryIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+    }
+    if(filters.tagIds){
+      query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+    }
+
+    query = query.concat(`
+      FROM
+        Application app
+      INNER JOIN
+        Organization org
+          ON org.OrganizationId = app.OrganizationId`);
+
+    if(filters.tagIds){
+      query = query.concat(`
+      INNER JOIN
+        TagApplication ta
+          ON ta.ApplicationId = app.ApplicationId
+          AND ta.TagId IN (${filters.tagIds})`);
+    }
+
     if(filters.continentIds){
       query = query.concat(`
       INNER JOIN
@@ -285,72 +397,6 @@ const get_sector_data_filtered = async (filters: any) => {
     if(filters.sectorIds){
       query = query.concat(`
       AND app.Sector IN (${filters.sectorIds})`);
-    }
-    query = query.concat(`
-    GROUP BY app.Sector;`);
-    
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_org_data_filtered = async (filters: any) => {
-  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
-  let query;
-  try {
-    query =
-    `SELECT org.OrganizationId as id,
-      org.Name as name,
-      COUNT(DISTINCT app.ApplicationId) as nApps, 
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Organization org
-        ON org.OrganizationId = app.OrganizationId`;
-
-    if(filters.tagIds){
-      query = query.concat(`
-      INNER JOIN
-        TagApplication ta
-          ON ta.ApplicationId = app.ApplicationId
-          AND ta.TagId IN (${filters.tagIds})`);
-    }
-
-    if(filters.continentIds){
-      query = query.concat(`
-      INNER JOIN
-        Country c
-          ON c.CountryId = app.CountryId
-          AND c.ContinentId IN (${filters.continentIds})`);
-    }
-  
-    query = query.concat(`
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
-    INNER JOIN
-    (SELECT a.AssertionId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.Deleted = '0'
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.Deleted = '0'`);
-
-    if(filters.countryIds){
-      query = query.concat(`
-      AND app.CountryId IN (${filters.countryIds})`);
     }
 
     query = query.concat(`

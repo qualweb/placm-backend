@@ -135,7 +135,6 @@ const get_data_continent = async () => {
 }
 
 const get_data_country_filtered = async (filters: any) => {
-  console.log("ola");
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT c.CountryId as id, 
@@ -149,7 +148,18 @@ const get_data_country_filtered = async (filters: any) => {
     COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
     COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
+    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+    
+  if(filters.continentIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+  }
+  if(filters.tagIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+  }
+
+  query = query.concat(`
   FROM
     Application app
   INNER JOIN
@@ -157,7 +167,7 @@ const get_data_country_filtered = async (filters: any) => {
       ON c.CountryId = app.CountryId
   INNER JOIN
     Continent cont
-      ON c.ContinentId = cont.ContinentId`; 
+      ON c.ContinentId = cont.ContinentId`); 
 
   if(filters.continentIds){
     query = query.concat(`

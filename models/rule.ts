@@ -47,11 +47,33 @@ const get_data_rule_filtered = async (filters: any) => {
     COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
     COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
+    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+  if(filters.continentIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+  }
+  if(filters.countryIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+  }
+  if(filters.tagIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+  }
+  if(filters.orgIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (${filters.orgIds})) as orgNames`);
+  }
+  if(filters.appIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (${filters.appIds})) as appNames`);
+  }
+    
+  query = query.concat(`
   FROM
     Application app
   INNER JOIN
-    Rule r`;
+    Rule r`);
 
   if(filters.tagIds){
     query = query.concat(`

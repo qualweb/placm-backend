@@ -82,7 +82,18 @@ const get_data_filtered = async (filters: any) => {
     COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
     COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
+    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+    
+  if(filters.continentIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+  }
+  if(filters.countryIds){
+    query = query.concat(`,
+      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+  }
+
+  query = query.concat(`
   FROM
     Application app
   INNER JOIN
@@ -90,7 +101,7 @@ const get_data_filtered = async (filters: any) => {
       ON ta.ApplicationId = app.ApplicationId
   INNER JOIN
     Tag t
-      ON t.TagId = ta.TagId`;
+      ON t.TagId = ta.TagId`);
 
   if(filters.continentIds){
     query = query.concat(`
