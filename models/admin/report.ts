@@ -5,7 +5,7 @@ import { EarlAssertion } from "../../lib/earl/earl_types";
 import { regulateStringLength } from "../../lib/util";
 import { trim } from "lodash";
 
-const add_earl_report = async (...jsons: string[]) => {
+const add_earl_report = async (serverName: string, ...jsons: string[]) => {
   let query;
   let urlRegex, urlTested, urlRegexMatch, assertionDate;
   let toolName, toolUrl, toolDesc, toolVersion;
@@ -41,7 +41,7 @@ const add_earl_report = async (...jsons: string[]) => {
       //console.log(index);
       index++;
 
-      urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
+      urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)(.*)?(#[\w\-]+)?$/);
       urlTested = trim(assertion.subject["source"]);
       urlRegexMatch = urlTested.match(urlRegex);
       assertionDate = assertion.result["earl:date"];
@@ -59,11 +59,11 @@ const add_earl_report = async (...jsons: string[]) => {
         regulateStringLength(assertion.subject["earl:assertor"]["earl:hasVersion"]) : null;
 
       query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${toolName}";`;
-      evaluationTool = (await execute_query(query))[0];
+      evaluationTool = (await execute_query(serverName, query))[0];
       if (!evaluationTool) {
         query = `INSERT INTO EvaluationTool (name, url, description, version)
           VALUES ("${toolName}", "${toolUrl}", "${toolDesc}", "${toolVersion}");`;
-        evaluationTool = await execute_query(query);
+        evaluationTool = await execute_query(serverName, query);
         result.evaluationTool.push(evaluationTool.insertId);
       }
 
@@ -79,24 +79,29 @@ const add_earl_report = async (...jsons: string[]) => {
           assertion.test["earl:description"][1] : assertion.test["earl:description"]);
 
       query = `SELECT RuleId FROM Rule WHERE url = "${ruleUrl}";`;
-      rule = (await execute_query(query))[0];
+      rule = (await execute_query(serverName, query))[0];
       if (!rule) {
         query = `INSERT INTO Rule (name, url, description)
           VALUES ("${ruleName}", "${ruleUrl}", "${ruleDesc}");`;
-        rule = await execute_query(query);
+        rule = await execute_query(serverName, query);
         result.rule.push(rule.insertId);
       }
 
       /* ---------- handle website/app ---------- */
       websiteUrl = regulateStringLength(urlRegexMatch ? urlRegexMatch[3] : "");
-      websiteName = regulateStringLength(websiteUrl.split(".")[0]);
+      let websiteUrlSplitted = websiteUrl.split(".");
+      if(websiteUrl.length > 0){
+        websiteName = regulateStringLength(websiteUrlSplitted[0] === 'www' ? websiteUrlSplitted[1] : websiteUrlSplitted[0]);
+      } else {
+        //todo tem de mandar o nome da aplicacao tambem
+      }
 
       query = `SELECT ApplicationId FROM Application WHERE url = "${websiteUrl}";`;
-      website = (await execute_query(query))[0];
+      website = (await execute_query(serverName, query))[0];
       if (!website) {
         query = `INSERT INTO Application (name, url, creationdate)
           VALUES ("${websiteName}", "${websiteUrl}", "${assertionDate}");`;
-        website = await execute_query(query);
+        website = await execute_query(serverName, query);
         result.application.push(website.insertId);
       }
       /* ---------- handle page ---------- */
@@ -104,12 +109,12 @@ const add_earl_report = async (...jsons: string[]) => {
       pageUrl = urlTested;
 
       query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
-      page = (await execute_query(query))[0];
+      page = (await execute_query(serverName, query))[0];
       if (!page) {
         query = `INSERT INTO Page (url, creationdate, applicationid)
           VALUES ("${pageUrl}", "${assertionDate}", "${website.insertId ||
           website.ApplicationId}");`;
-        page = await execute_query(query);
+        page = await execute_query(serverName, query);
         result.page.push(page.insertId);
       }
 
@@ -131,14 +136,14 @@ const add_earl_report = async (...jsons: string[]) => {
                 Date = "${assertionDate}" AND
                 Description = "${assertionDesc}" AND
                 Outcome = "${assertionOutcome}";`;
-      assertionSQL = (await execute_query(query))[0];
+      assertionSQL = (await execute_query(serverName, query))[0];
       if (!assertionSQL) {
         query = `INSERT INTO Assertion (EvaluationToolId, RuleId, PageId, Mode, Date, Description, Outcome)
                 VALUES ("${evaluationTool.insertId ||
                   evaluationTool.EvaluationToolId}", "${rule.insertId ||
           rule.RuleId}", "${page.insertId || page.PageId}",
                 "${assertionMode}", "${assertionDate}", "${assertionDesc}", "${assertionOutcome}");`;
-        assertionSQL = await execute_query(query);
+        assertionSQL = await execute_query(serverName, query);
         result.assertion.push(assertionSQL.insertId);
       }
     }

@@ -1,9 +1,10 @@
 //const { DbError } = require("./_error");
-import {createConnection} from 'mysql';
+import {createConnection, Connection} from 'mysql';
 import {DB_CONFIG, DB_CONFIG_PROTO} from './constants';
+import { create } from 'lodash';
 //import {DB_CONFIG_X} from './constants';
 
-function execute_query(query: any): Promise<any> {
+function execute_query(serverName: string, query: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
 
     /*let session;
@@ -20,7 +21,18 @@ function execute_query(query: any): Promise<any> {
       session && session.close();
     }*/
 
-    const connection = createConnection(DB_CONFIG);
+    let connection: Connection;
+    switch(serverName) {
+      case 'proto':
+        connection = createConnection(DB_CONFIG_PROTO);
+        break;
+      case 'pt':
+        connection = createConnection(DB_CONFIG_PROTO);
+        break;
+      default:
+        connection = createConnection(DB_CONFIG);
+        break;
+    }
     connection.connect();
 
     connection.query(query, (err: any, res: unknown) => {

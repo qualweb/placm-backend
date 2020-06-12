@@ -17,7 +17,7 @@ router.get('/byTool', async function (req, res, next) {
 router.get('/allEvalToolDataFiltered', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_evaluation_tool_filtered(filters)
+    await get_data_evaluation_tool_filtered(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

@@ -1,4 +1,4 @@
-import { execute_query_proto } from "../lib/database";
+import { execute_query, execute_query_proto } from "../lib/database";
 import { error, success } from "../lib/responses";
 
 const get_data_by_evaluation_tool = async () => {
@@ -35,7 +35,7 @@ let query;
   }
 }
 
-const get_data_evaluation_tool_filtered = async (filters: any) => {
+const get_data_evaluation_tool_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT eval.Name as name,
@@ -126,7 +126,7 @@ const get_data_evaluation_tool_filtered = async (filters: any) => {
   GROUP BY eval.Name, eval.EvaluationToolId;`);
 
   try {
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);

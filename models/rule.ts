@@ -1,5 +1,5 @@
 import { success, error } from "../lib/responses";
-import { execute_query_proto } from "../lib/database";
+import { execute_query_proto, execute_query } from "../lib/database";
 
 const get_all_data = async () => {
   let query;
@@ -36,7 +36,7 @@ const get_all_data = async () => {
   }
 }
 
-const get_data_rule_filtered = async (filters: any) => {
+const get_data_rule_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT r.Name as name,
@@ -68,6 +68,10 @@ const get_data_rule_filtered = async (filters: any) => {
     query = query.concat(`,
     (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (${filters.appIds})) as appNames`);
   }
+  if(filters.evalIds){
+    query = query.concat(`,
+    (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (${filters.evalIds}) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`);
+  }
     
   query = query.concat(`
   FROM
@@ -96,7 +100,7 @@ const get_data_rule_filtered = async (filters: any) => {
     Page p
       ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
   INNER JOIN
-  (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId
+  (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
@@ -123,11 +127,15 @@ const get_data_rule_filtered = async (filters: any) => {
     query = query.concat(`
     AND app.OrganizationId IN (${filters.orgIds})`);
   }
+  if(filters.evalIds){
+    query = query.concat(`
+    AND a.EvaluationToolId IN (${filters.evalIds})`);
+  }
   query = query.concat(`
   GROUP BY r.Name, r.RuleId;`);
 
   try {
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);

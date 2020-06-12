@@ -17,7 +17,7 @@ router.get('/allData', async function (req, res, next) {
 router.get('/allRuleDataFiltered', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_rule_filtered(filters)
+    await get_data_rule_filtered(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

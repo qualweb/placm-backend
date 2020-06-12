@@ -1,5 +1,5 @@
 import { success, error } from "../../lib/responses";
-import { execute_query_proto } from "../../lib/database";
+import { execute_query } from "../../lib/database";
 import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON } from "../../lib/constants";
 import * as fs from 'fs';
 import { trim, includes, map } from "lodash";
@@ -16,7 +16,7 @@ const c = require('ansi-colors');
 
 const randomWords = require('random-words');
 
-const add_filedata = async () => {
+const add_filedata = async (serverName: string) => {
   let result: any = {
     tags: [],
     evaluationTools: [],
@@ -39,17 +39,17 @@ const add_filedata = async () => {
     switch(entry['type']){
       case 'Tag':
           query = `SELECT TagId FROM Tag WHERE name = "${entry['name']}";`;
-          tag = (await execute_query_proto(query))[0];
+          tag = (await execute_query(serverName, query))[0];
           if (!tag) {
             query = `INSERT INTO Tag (name)
                 VALUES ("${entry['name']}");`;
-            tag = await execute_query_proto(query);
+            tag = await execute_query(serverName, query);
             result.tags.push(tag.insertId);
           };
           break;
         case 'EvaluationTool':
           query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${entry['name']}";`;
-          evalTool = (await execute_query_proto(query))[0];
+          evalTool = (await execute_query(serverName, query))[0];
           if (!evalTool) {
             if(entry['data1'] === ''){
               url = null;
@@ -58,13 +58,13 @@ const add_filedata = async () => {
             }
             query = `INSERT INTO EvaluationTool (name, url, description, version)
                 VALUES ("${entry['name']}", ${url}, "${entry['data2']}", "${entry['data3']}");`;
-            evalTool = await execute_query_proto(query);
+            evalTool = await execute_query(serverName, query);
             result.evaluationTools.push(evalTool.insertId);
           };
           break;
         case 'Rule':
           query = `SELECT RuleId FROM Rule WHERE name = "${entry['name']}";`;
-          rule = (await execute_query_proto(query))[0];
+          rule = (await execute_query(serverName, query))[0];
           if (!rule) {
             if(entry['data1'] === ''){
               url = null;
@@ -73,7 +73,7 @@ const add_filedata = async () => {
             }
             query = `INSERT INTO Rule (name, url, description)
                 VALUES ("${entry['name']}", ${url}, "${entry['data2']}");`;
-            rule = await execute_query_proto(query);
+            rule = await execute_query(serverName, query);
             result.rules.push(rule.insertId);
           };
           break;
@@ -106,22 +106,22 @@ const add_filedata = async () => {
         .concat((Math.floor(Math.random()*9)+1).toString())
         .concat(' 00:00:00');
     query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
-    app = (await execute_query_proto(query))[0];
+    app = (await execute_query(serverName, query))[0];
     if (!app) {
       let organizationName = randomWords({ exactly: 1 })[0];
       organizationName = organizationName.charAt(0).toUpperCase() + organizationName.slice(1);
       organizationName = organizationName.concat(' ').concat(orgsExtensions[Math.floor(Math.random()*3)]);
       query = `SELECT OrganizationId FROM Organization WHERE name = "${organizationName}";`;
-      organization = (await execute_query_proto(query))[0];
+      organization = (await execute_query(serverName, query))[0];
       if(!organization){
         query = `INSERT INTO Organization (name)
           VALUES ("${organizationName}");`;
-          organization = await execute_query_proto(query);
+          organization = await execute_query(serverName, query);
         result.organizations.push(organizationName);         
       }
       query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
           VALUES ("${appName}", "${organization.OrganizationId ? organization.OrganizationId : organization.insertId}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
-      app = await execute_query_proto(query);
+      app = await execute_query(serverName, query);
       result.applications.push(app.insertId);
     };
     appId = app.insertId || app.ApplicationId;
@@ -131,11 +131,11 @@ const add_filedata = async () => {
     query = `SELECT TagId FROM TagApplication WHERE 
               TagId = "${tagId}" AND
               ApplicationId = "${appId}";`;
-    tagapp = (await execute_query_proto(query))[0];
+    tagapp = (await execute_query(serverName, query))[0];
     if (!tagapp) {
       query = `INSERT INTO TagApplication (TagId, ApplicationId)
           VALUES ("${tagId}", "${appId}");`;
-        tagapp = await execute_query_proto(query);
+        tagapp = await execute_query(serverName, query);
       result.tagApps.push([tagId, appId]);
     };
 
@@ -146,11 +146,11 @@ const add_filedata = async () => {
     for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
       pageUrl = appUrl.concat('/').concat(randomString(10));
       query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
-      page = (await execute_query_proto(query))[0];
+      page = (await execute_query(serverName, query))[0];
       if (!page) {
         query = `INSERT INTO Page (url, creationdate, applicationid)
             VALUES ("${pageUrl}", "${appDate}", "${appId}");`;
-        page = await execute_query_proto(query);
+        page = await execute_query(serverName, query);
         result.pages.push(page.insertId);
       };
       pageId = page.insertId || page.PageId;
@@ -168,11 +168,11 @@ const add_filedata = async () => {
               date = "${appDate}" AND
               description = "${assertionDesc}" AND
               outcome = "${assertionOutcome}";`;
-        assertion = (await execute_query_proto(query))[0];
+        assertion = (await execute_query(serverName, query))[0];
         if (!assertion) {
           query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
               VALUES ("${evaluationToolId}", "${r}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
-          assertion = await execute_query_proto(query);
+          assertion = await execute_query(serverName, query);
           result.assertions.push(assertion.insertId);
         };
       }
@@ -181,7 +181,7 @@ const add_filedata = async () => {
   return success(result);
 };
 
-const add_countries = async () => {
+const add_countries = async (serverName: string) => {
   let result: any = {
     countries: [],
     continents: []
@@ -192,21 +192,30 @@ const add_countries = async () => {
   try {
     for (let c of Object.values(COUNTRY_JSON)) {
       query = `SELECT Name FROM Country WHERE name = "${c.country}";`;
-      country = (await execute_query_proto(query))[0];
+      country = (await execute_query(serverName, query))[0];
       if (!country && c.country) {
         query = `SELECT ContinentId FROM Continent WHERE name = "${c.continent}";`;
-        continent = (await execute_query_proto(query))[0];
+        continent = (await execute_query(serverName, query))[0];
         if(!continent){
           query = `INSERT INTO Continent (name)
             VALUES ("${c.continent}");`;
-          continent = await execute_query_proto(query);
+          continent = await execute_query(serverName, query);
           result.continents.push(c.continent);         
         }
         query = `INSERT INTO Country (name, continentId)
           VALUES ("${c.country}", "${continent.ContinentId ? continent.ContinentId : continent.insertId}");`;
-        country = await execute_query_proto(query);
+        country = await execute_query(serverName, query);
         result.countries.push(c.country);   
       }
+      /*if(c.continent){
+        if(!result.continents.includes(c.continent)){
+          query = `INSERT INTO Continent (name) VALUES ("${c.continent}");`;
+          console.log(query);
+          result.continents.push(c.continent);
+        }
+        query = `INSERT INTO Country (name, continentId) VALUES ("${c.country}", "${result.continents.indexOf(c.continent)}");`;
+        console.log(query);
+      }*/
     }
   } catch (err) {
     console.log(err);
@@ -416,11 +425,11 @@ async function correct_urls_files_json() {
   /*try {
     for (let c of Object.values(COUNTRY_JSON)) {
       query = `SELECT Name FROM Country WHERE name = "${c.country}";`;
-      country = (await execute_query_proto(query))[0];
+      country = (await execute_query(serverName, query))[0];
       if (!country && c.country) {
         query = `INSERT INTO Country (name, continent)
             VALUES ("${c.country}", "${c.continent}");`;
-        country = await execute_query_proto(query);
+        country = await execute_query(serverName, query);
         result.entries.push(country.insertId);
         result.countries.push(c.country);
         if (result.continents.indexOf(c.continent) === -1)

@@ -145,4 +145,4 @@ const get_data_filtered = async (filters: any) => {
   }
 }
 
-export {get_data_filtered};
+export {get_data_filtered, get_all_tags_names};

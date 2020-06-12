@@ -80,9 +80,6 @@ const get_all_country_names = async () => {
       c.CountryId as id
     FROM
       Country c
-    INNER JOIN
-      Application app
-        ON app.CountryId = c.CountryId
     GROUP BY c.Name;`;
     let result = (await execute_query_proto(query));
     return success(result);
@@ -208,4 +205,4 @@ const get_data_country_filtered = async (filters: any) => {
   }
 }
 
-export {get_data_continent, get_data_country_filtered};
+export {get_data_continent, get_data_country_filtered, get_all_country_names};

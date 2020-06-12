@@ -1,5 +1,5 @@
 import express from "express";
-import {get_data_country_filtered, get_data_continent} from "../models/country"
+import {get_data_country_filtered, get_data_continent, get_all_country_names} from "../models/country"
 
 const router = express.Router();
 
@@ -40,6 +40,17 @@ router.get('/allCountryDataFiltered', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
     await get_data_country_filtered(filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/countryNames', async function (req, res, next) {
+  try {
+      await get_all_country_names()
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

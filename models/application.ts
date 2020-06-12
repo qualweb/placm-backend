@@ -1,4 +1,4 @@
-import { execute_query_proto } from "../lib/database";
+import { execute_query, execute_query_proto } from "../lib/database";
 import { error, success } from "../lib/responses";
 
 const get_data_by_sector = async () => {
@@ -161,7 +161,7 @@ const get_data_except_id = async (ids: string[]) => {
   }
 }
 
-const get_app_data_filtered = async (filters: any) => {
+const get_app_data_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
     `SELECT app.Name as name,
@@ -240,14 +240,14 @@ const get_app_data_filtered = async (filters: any) => {
   GROUP BY app.Name, app.ApplicationId;`);
 
   try {
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);
   }
 }
 
-const get_sector_data_filtered = async (filters: any) => {
+const get_sector_data_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query;
   try {
@@ -316,14 +316,14 @@ const get_sector_data_filtered = async (filters: any) => {
     query = query.concat(`
     GROUP BY app.Sector;`);
     
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);
   }
 }
 
-const get_org_data_filtered = async (filters: any) => {
+const get_org_data_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query;
   try {
@@ -402,7 +402,7 @@ const get_org_data_filtered = async (filters: any) => {
     query = query.concat(`
     GROUP BY org.Name, org.OrganizationId;`);
     
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);

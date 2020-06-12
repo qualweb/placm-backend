@@ -1,11 +1,12 @@
 import express from "express";
 import { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel} from "../../models/admin/proto"
+import { create } from "lodash";
 
 const router = express.Router();
 
 router.post('/addData', async function (req, res, next) {
   try {
-      await add_filedata()
+    await add_filedata(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -16,7 +17,7 @@ router.post('/addData', async function (req, res, next) {
 
 router.post('/addCountries', async function (req, res, next) {
   try {
-      await add_countries()
+    await add_countries(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

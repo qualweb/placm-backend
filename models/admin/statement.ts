@@ -8,7 +8,7 @@ import { error, success } from "../../lib/responses";
 
 const fetch = require("node-fetch");
 
-const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: string[]) => {
+const add_accessibility_statement = async (serverName: string, numLinks: number, ...linksAndTexts: string[]) => {
   console.log(numLinks);
 
   let statements: any[] = [];
@@ -347,11 +347,11 @@ const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: s
       } else {
         query = `SELECT ApplicationId FROM Application WHERE url = ${appUrl};`;
       }
-      application = (await execute_query(query))[0];
+      application = (await execute_query(serverName, query))[0];
       if (!application) {
         query = `INSERT INTO Application (name, url, organization, creationdate)
           VALUES ("${name}", ${appUrl}, ${organization}, "${date}");`;
-        application = await execute_query(query);
+        application = await execute_query(serverName, query);
         results.applications.push(application.insertId);
       }
 
@@ -376,75 +376,75 @@ const add_accessibility_statement = async (numLinks: number, ...linksAndTexts: s
                     WHERE
                     ASUrl = ${asUrl};`;
       }
-      asSQL = (await execute_query(query))[0];
+      asSQL = (await execute_query(serverName, query))[0];
       if (!asSQL) {
         query = `INSERT INTO AccessibilityStatement (Origin, ASUrl, ApplicationId, Standard, Date, State, UsabilityStamp, UsabilityStampText, 
                 LimitationsWithoutAltCounter, CompatabilitiesCounter, IncompatabilitiesCounter, TechnologiesUsed, AccessmentApproach)
                 VALUES (${origin}, ${asUrl}, "${application.insertId || application.ApplicationId}", "${standard}",
                 "${date}", "${state}", "${sealEnum}", ${sealText}, "${limitationsCounter}", "${compatabilitiesCounter}", 
                 "${incompatabilitiesCounter}", ${technologiesUsed}, "${approach}");`;
-        asSQL = await execute_query(query);
+        asSQL = await execute_query(serverName, query);
         results.astatements.push(asSQL.insertId);
       }
 
       forEach(phoneNumber, (async phone => {
         phone = readyStringToQuery(phone);
         query = `SELECT ContactId FROM Contact WHERE type = "phone" AND contact = ${phone};`;
-        contact = (await execute_query(query))[0];
+        contact = (await execute_query(serverName, query))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
             VALUES ("phone", ${phone});`;
-            contact = await execute_query(query);
+            contact = await execute_query(serverName, query);
           results.contacts.push(contact.insertId);
         }
       }));
       forEach(email, (async emailAddr => {
         emailAddr = readyStringToQuery(emailAddr);
         query = `SELECT ContactId FROM Contact WHERE type = "email" AND contact = ${emailAddr};`;
-        contact = (await execute_query(query))[0];
+        contact = (await execute_query(serverName, query))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact, durationresponse)
             VALUES ("email", ${emailAddr}, ${durResponse});`;
-            contact = await execute_query(query);
+            contact = await execute_query(serverName, query);
           results.contacts.push(contact.insertId);
         }
       }));
       forEach(visitorAddress, (async visitorAddr => {
         visitorAddr = readyStringToQuery(visitorAddr);
         query = `SELECT ContactId FROM Contact WHERE type = "visitorAdress" AND contact = ${visitorAddr};`;
-        contact = (await execute_query(query))[0];
+        contact = (await execute_query(serverName, query))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
             VALUES ("visitorAdress", ${visitorAddr});`;
-            contact = await execute_query(query);
+            contact = await execute_query(serverName, query);
           results.contacts.push(contact.insertId);
         }
       }));
       forEach(postalAddress, (async postalAddr => {
         postalAddr = readyStringToQuery(postalAddr);
         query = `SELECT ContactId FROM Contact WHERE type = "postalAdress" AND contact = ${postalAddr};`;
-        contact = (await execute_query(query))[0];
+        contact = (await execute_query(serverName, query))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
             VALUES ("postalAdress", ${postalAddr});`;
-            contact = await execute_query(query);
+            contact = await execute_query(serverName, query);
           results.contacts.push(contact.insertId);
         }
       }));
       forEach(twitter, (async twitterAt => {
         twitterAt = readyStringToQuery(twitterAt);
         query = `SELECT ContactId FROM Contact WHERE type = "twitter" AND contact = ${twitterAt};`;
-        contact = (await execute_query(query))[0];
+        contact = (await execute_query(serverName, query))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact, durationresponse)
             VALUES ("twitter", ${twitterAt}, ${durResponse});`;
-            contact = await execute_query(query);
+            contact = await execute_query(serverName, query);
           query = `INSERT INTO AcceStatContact (ASId, ContactId)
             VALUES ("${asSQL.insertId || asSQL.ASId}", "${contact.insertId}");`
           results.contacts.push(contact.insertId);
         }
       }));
-      results.reports = (await add_earl_report(...earlReports)).result;
+      results.reports = (await add_earl_report(serverName, ...earlReports)).result;
     } catch (err){
       console.log(err);
       throw error(err);
