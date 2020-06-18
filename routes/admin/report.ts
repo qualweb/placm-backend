@@ -8,6 +8,7 @@ router.post('/add', async function (req, res, next) {
       //req.check('jsonFromLink', 'Invalid json from link').exists();
       //req.check('jsonFromFile', 'Invalid json from file').exists();
       req.check('serverName', 'Invalid name').exists();
+      req.check('formData', 'Invalid form values').exists();
       req.check('jsons', 'Invalid jsons').exists();
       const errors = req.validationErrors();
       if (errors) {
@@ -19,9 +20,9 @@ router.post('/add', async function (req, res, next) {
         //console.log((req.body.jsons).length);
           //const jsonFromLink = req.body.jsonFromLink;
           const serverName = req.body.serverName;
+          const formData = JSON.parse(req.body.formData);
           const arrayJsons = JSON.parse(req.body.jsons);
-          console.log(arrayJsons);
-          await add_earl_report(serverName, ...arrayJsons)
+          await add_earl_report(serverName, formData, ...arrayJsons)
             .then(result => res.send(result))
             .catch((err: any) => res.send(err));
         }

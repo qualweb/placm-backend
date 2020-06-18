@@ -2,24 +2,17 @@ import { forEach } from "lodash";
 import { add_earl_report } from "./report";
 import { parse } from 'node-html-parser';
 import { twitterRegex, emailRegex, telephoneRegex } from "../../lib/constants";
-import { setCharAt, readyStringToQuery, readyUrlToQuery } from "../../lib/util";
+import { setCharAt, readyStringToQuery, readyUrlToQuery, regulateStringLength } from "../../lib/util";
 import { execute_query } from "../../lib/database";
 import { error, success } from "../../lib/responses";
+import { response } from "express";
 
 const fetch = require("node-fetch");
 
-const add_accessibility_statement = async (serverName: string, numLinks: number, ...linksAndTexts: string[]) => {
-  console.log(numLinks);
+const add_accessibility_statement = async (serverName: string, numLinks: number, formData: any, ...linksAndTexts: string[]) => {
 
   let statements: any[] = [];
   let linksRead: string[] = [];
-
-  /*for(let text of texts){
-    if(text){
-      statements.push(parse(text));
-    }
-  }*/
-
 
   for(let i = 0; i < linksAndTexts.length; i++){
     if(numLinks > 0 && i <= numLinks - 1){
@@ -32,12 +25,14 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       }
     }
   }
+  console.log(linksRead);
 
   let origin;
   let asUrl;
-  let organization, orgElem;
+  let organization, orgName, orgElem, orgId;
   let name, nameElem;
-  let appUrl, appUrlElem;
+  let appUrl, appUrlElem, appCountry, appId;
+  let tagSql, appTags = [], tagApp;
   let state, stateString = "", stateElem;
   let date, dateElem;
   let standard, standardElem, standardText, standardNumber;
@@ -59,7 +54,11 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
   let results: any = {
     astatements: [],
     applications: [],
+    organizations: [],
+    tags: [],
+    tagApplications: [],
     contacts: [],
+    failedLinks: [],
     reports: {}
   };
 
@@ -67,39 +66,59 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
   let application: any, asSQL: any, contact: any;
 
   for(let i = 0; i < statements.length; i++){
-    /* ---------- handle organization name ---------- */
-    orgElem = statements[i].querySelectorAll(".mr.mr-e-name");
-    if(orgElem.length){
-      /*lowFl - let orgSiblingIndex = orgElem[0].parentNode.childNodes.indexOf(orgElem[0]) + 2;
-      organization = orgElem[0].parentNode.childNodes[orgSiblingIndex].text;*/
-      organization = orgElem[0].childNodes[0].text;
-    } else {
-      orgElem = statements[i].querySelectorAll(".basic-information.organization-name");
+    if(formData.org === null || formData.org.trim() === ''){
+      /* ---------- handle organization name ---------- */
+      orgElem = statements[i].querySelectorAll(".mr.mr-e-name");
       if(orgElem.length){
-        organization = orgElem[0].text;
+        /*lowFl - let orgSiblingIndex = orgElem[0].parentNode.childNodes.indexOf(orgElem[0]) + 2;
+        organization = orgElem[0].parentNode.childNodes[orgSiblingIndex].text;*/
+        orgName = orgElem[0].childNodes[0].text;
+      } else {
+        orgElem = statements[i].querySelectorAll(".basic-information.organization-name");
+        if(orgElem.length){
+          orgName = orgElem[0].text;
+        }
       }
+    } else {
+      orgName = formData.org;
     }
+    orgName = readyStringToQuery(orgName);
+    console.log(orgName);
 
     /* ---------- handle application name ---------- */
-    nameElem = statements[i].querySelectorAll("[name=target-name]");
-    if(nameElem.length){
-      name = nameElem[0].text;
-      origin = "govpt";
-    } else {
-      nameElem = statements[i].querySelectorAll(".basic-information.website-name");
+    if(formData.appName === null || formData.appName.trim() === ''){
+      nameElem = statements[i].querySelectorAll(".mr.mr-t-desc");
       if(nameElem.length){
-        name = nameElem[0].text;
-        origin = "w3c";
+        name = nameElem[0].childNodes[0].text;
+        origin = "govpt";
+      } else {
+        nameElem = statements[i].querySelectorAll(".basic-information.website-name");
+        if(nameElem.length){
+          name = nameElem[0].text;
+          origin = "w3c";
+        }
       }
+    } else {
+      name = formData.appName;
     }
+    name = readyStringToQuery(name);
+    console.log(name);
+
 
     /* ---------- handle application url ---------- */
-    appUrlElem = statements[i].querySelectorAll("[name=siteurl]");
-    if(appUrlElem.length){
-      appUrl = appUrlElem[0].getAttribute('href');
+    if(formData.appUrl === null || formData.appUrl.trim() === ''){
+      appUrlElem = statements[i].querySelectorAll("[name=siteurl]");
+      if(appUrlElem.length){
+        appUrl = appUrlElem[0].getAttribute('href');
+      } else {
+        // todo w3c generator doesnt have the link element even having an input field to app's url
+        appUrl = null
+      }
     } else {
-      // todo w3c generator doesnt have the link element even having an input field to app's url
+      appUrl = formData.appUrl;
     }
+    appUrl = readyUrlToQuery(appUrl);
+    console.log(appUrl);
 
     /* ---------- handle conformance state ---------- */
     stateElem = statements[i].querySelectorAll("[name=conformance-output]");
@@ -139,6 +158,8 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         date = dateElem[0].text;
       }
     }
+    console.log(date);
+    
 
     /* ---------- handle standard ---------- */
     standardElem = statements[i].querySelectorAll(".basic-information.conformance-standard");
@@ -166,10 +187,22 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     wwwcLinks = statements[i].querySelectorAll(".technical-information.related-evidence");
 
     let linksFound = findChildrenLinks(autoEvaluations, manualEvaluations, wwwcLinks);
+    console.log(linksFound);
     for(let i = 0; i < linksFound.length; i++){
-      let fetchedText = await fetch(linksFound[i]);
-      if(await fetchedText){
-        earlReports.push(await fetchedText.text());
+      let fetchedText = await fetch(linksFound[i])
+            .then(function(res: any) {
+              if(!res.ok){
+                throw Error(res);
+              }
+              return res;
+            })
+            .catch(function(err: any) {
+              if(!results.failedLinks.includes(linksFound[i]))
+                results.failedLinks.push(linksFound[i]);
+              return null;
+            });
+      if(fetchedText){
+        earlReports.push(fetchedText.text());
       }
     }
 
@@ -249,40 +282,40 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     /* ---------- handle efforts ---------- */
     effortsListElem = statements[i].querySelectorAll('.organizational-effort.accessibility-measures');
     if(effortsListElem.length){
-      forEach(effortsListElem[0].childNodes, (child => {
+      for(let child of effortsListElem[0].childNodes){
         if(child.tagName){
           effortsCounter++;
         }
-      }));
+      };
     }
     
     /* ---------- handle limitations ---------- */
     limitationsListElem = statements[i].querySelectorAll('#non-conformance-sections');
     if(limitationsListElem.length){
-      forEach(limitationsListElem[0].childNodes, (child => {
+      for(let child of limitationsListElem[0].childNodes){
         if(child.tagName){
           limitationsCounter++;
         }
-      }));
+      };
     } else {
       limitationsListElem = statements[i].querySelectorAll('.technical-information.accessibility-limitations');
       if(limitationsListElem.length){
-        forEach(limitationsListElem[0].childNodes, (child => {
+        for(let child of limitationsListElem[0].childNodes){
           if(child.tagName){
             limitationsCounter++;
           }
-        }));
+        };
       }
     }
 
     /* ---------- handle technologies ---------- */
     technologiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(technologiesListElem.length){
-      forEach(technologiesListElem[0].childNodes, (tech => {
+      for(let tech of technologiesListElem[0].childNodes){
         if(tech.tagName && technologiesUsed){
           technologiesUsed = technologiesUsed.concat(tech.text.replace(';',','), ';');
         }
-      }));
+      };
     }
     // to remove final dot
     if(technologiesUsed && technologiesUsed.length > 1){
@@ -292,27 +325,27 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     /* ---------- handle compatabilities ---------- */
     compatabilitiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(compatabilitiesListElem.length){
-      forEach(compatabilitiesListElem[0].childNodes, (child => {
+      for(let child of compatabilitiesListElem[0].childNodes){
         if(child.tagName){
           compatabilitiesCounter++;
         }
-      }));
+      };
     }
 
     /* ---------- handle incompatabilities ---------- */
     incompatabilitiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(incompatabilitiesListElem.length){
-      forEach(incompatabilitiesListElem[0].childNodes, (child => {
+      for(let child of incompatabilitiesListElem[0].childNodes){
         if(child.tagName){
           incompatabilitiesCounter++;
         }
-      }));
+      };
     }
 
     /* ---------- handle accessment approach ---------- */
     approachListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(approachListElem.length){
-      forEach(approachListElem[0].childNodes, (child => {
+      for(let child of approachListElem[0].childNodes){
         if(child.tagName){
           switch(child.text.toLowerCase()){
             case 'self-evaluation':
@@ -326,12 +359,11 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
               break;
           }
         }
-      }));
+      };
     }
 
-    appUrl = appUrl === undefined ? null : readyUrlToQuery(appUrl);
-    organization = organization === undefined ? null : readyStringToQuery(organization);
     date = date === undefined ? new Date().toISOString().slice(0, 19).replace('T', ' ') : new Date(date).toISOString().slice(0, 19).replace('T', ' ');
+    appCountry = formData.country ? formData.country.id : null;
 
     origin = origin === undefined ? 'unknown' : readyStringToQuery(origin);
     asUrl = linksRead[i] === undefined ? null : readyUrlToQuery(linksRead[i]);
@@ -339,28 +371,63 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     sealText = sealText === undefined ? null : readyStringToQuery(sealText);
     technologiesUsed = technologiesUsed === null ? null : readyStringToQuery(technologiesUsed);
 
-    durResponse = durResponse === null ? null : readyStringToQuery(durResponse);
+    durResponse = durResponse === null ? null : readyStringToQuery(durResponse); 
 
     try {
-      if(appUrl === null){
-        query = `SELECT ApplicationId FROM Application WHERE name = "${name}" AND organization = ${organization};`;
-      } else {
-        query = `SELECT ApplicationId FROM Application WHERE url = ${appUrl};`;
+      query = `SELECT OrganizationId FROM Organization WHERE name = ${orgName};`;
+      organization = (await execute_query(serverName, query))[0];
+      if (!organization) {
+        query = `INSERT INTO Organization (name)
+          VALUES (${orgName});`;
+          organization = await execute_query(serverName, query);
+        results.organizations.push(organization.insertId);
       }
+      orgId = organization.OrganizationId ? organization.OrganizationId : organization.insertId;
+
+      query = `SELECT ApplicationId FROM Application WHERE name = ${name} AND OrganizationId = ${orgId};`;
       application = (await execute_query(serverName, query))[0];
       if (!application) {
-        query = `INSERT INTO Application (name, url, organization, creationdate)
-          VALUES ("${name}", ${appUrl}, ${organization}, "${date}");`;
+        query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
+          VALUES (${name}, ${orgId}, ${formData.type}, ${formData.sector}, ${appUrl}, "${date}", ${appCountry});`;
         application = await execute_query(serverName, query);
         results.applications.push(application.insertId);
       }
+      appId = application.ApplicationId ? application.ApplicationId : application.insertId;
+
+      for(let tag of formData.tags){
+        let tagName = tag;
+        if(typeof tag !== 'string'){
+          tagName = tag.name;
+        }
+        tagName = readyStringToQuery(tagName);
+        query = `SELECT TagId FROM Tag WHERE name = ${tagName};`;
+        tagSql = (await execute_query(serverName, query))[0];
+        if(!tagSql){
+          query = `INSERT INTO Tag (name)
+            VALUES (${tagName});`;
+            tagSql = await execute_query(serverName, query);
+          results.tags.push(tagSql.insertId);
+        }
+        appTags.push(tagSql.TagId ? tagSql.TagId : tagSql.insertId);
+      }
+      for(let tId of appTags){
+        query = `SELECT * FROM TagApplication WHERE TagId = ${tId} AND ApplicationId = ${appId};`;
+        tagApp = (await execute_query(serverName, query))[0];
+        if(!tagApp){
+          query = `INSERT INTO TagApplication (TagId, ApplicationId)
+          VALUES (${tId}, ${appId});`;
+          tagApp = await execute_query(serverName, query);
+          results.tagApplications.push(tagApp.insertId);
+        }
+      }
+      console.log(results);
 
       // todo fix from:file
       if(asUrl === null){
         query = `SELECT ASId FROM AccessibilityStatement 
                     WHERE 
                     Origin = ${origin} AND
-                    ApplicationId = "${application.insertId || application.ApplicationId}" AND
+                    ApplicationId = "${appId}" AND
                     Standard = "${standard}" AND
                     Date = "${date}" AND
                     State = "${state}" AND
@@ -444,7 +511,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
           results.contacts.push(contact.insertId);
         }
       }));
-      results.reports = (await add_earl_report(serverName, ...earlReports)).result;
+      results.reports = (await add_earl_report(serverName, formData, ...earlReports)).result;
     } catch (err){
       console.log(err);
       throw error(err);

@@ -1,5 +1,5 @@
 import { success, error } from "../lib/responses";
-import { execute_query_proto } from "../lib/database";
+import { execute_query_proto, execute_query } from "../lib/database";
 
 const get_number_of_tags = async () => {
   try {
@@ -11,15 +11,16 @@ const get_number_of_tags = async () => {
   }
 }
 
-const get_all_tags_names = async () => {
+const get_all_tags_names = async (serverName: string) => {
   let query;
   try {
     query =
     `SELECT t.Name as name,
-      t.TagId as id
+      t.TagId as id,
+      NOW() as date
     FROM
       Tag t`;
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);
@@ -71,7 +72,7 @@ const get_all_tag_data = async () => {
   }
 }
 
-const get_data_filtered = async (filters: any) => {
+const get_data_filtered = async (serverName: any, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT t.TagId as id,
@@ -138,7 +139,7 @@ const get_data_filtered = async (filters: any) => {
   GROUP BY t.TagId, t.Name;`);
 
   try {
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);

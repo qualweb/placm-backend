@@ -1,8 +1,8 @@
 import { success, error } from "../../lib/responses";
 import { execute_query } from "../../lib/database";
-import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON } from "../../lib/constants";
+import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON, urlRegex, DB_NAMES } from "../../lib/constants";
 import * as fs from 'fs';
-import { trim, includes, map } from "lodash";
+import { trim, includes, map, truncate } from "lodash";
 import path from "path";
 import puppeteer from "puppeteer";
 import { parse } from 'node-html-parser';
@@ -15,6 +15,33 @@ const fetch = require("node-fetch");
 const c = require('ansi-colors');
 
 const randomWords = require('random-words');
+
+const reset_database = async (serverName: string) => {
+  let query;
+  const dbName: string = DB_NAMES[serverName];
+  try {
+    // get all table names except country and continent
+    query = `SELECT 
+    CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS truncateCommand
+    FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME NOT IN ("Country", "Continent");
+    `;
+    let truncates = await execute_query(serverName, query);
+
+    // deleting all content from tables
+    query = `SET FOREIGN_KEY_CHECKS=0;\n\n`;
+    for(let trunc of truncates){
+      query = query.concat(trunc.truncateCommand).concat('\n');
+    }
+    query = query.concat(`\nSET FOREIGN_KEY_CHECKS=1;`);
+    await execute_query(serverName, query, true);
+
+  } catch (err){
+    console.log(err);
+    return error(err);
+  }
+  return success();
+}
 
 const add_filedata = async (serverName: string) => {
   let result: any = {
@@ -237,8 +264,6 @@ async function correct_urls_files_json() {
   let failedLinks: string[][] = [];
   let differentLinks: string[][] = [];
 
-  let urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
-
   let amostra = <string> await readFile('lib/data_links_jsons', 'amostra2015_json.json');
   let ensinoSuperior = <string> await readFile('lib/data_links_jsons', 'ensino_superior_json.json');
   let municipios = <string> await readFile('lib/data_links_jsons', 'municipios_json.json');
@@ -446,8 +471,6 @@ async function add_as_from_links_excel() {
 
   let linksWithAS: string[][] = [];
 
-  let urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
-
   /*const browser = await puppeteer.launch({
     ignoreHTTPSErrors: true
   });
@@ -637,4 +660,4 @@ function randomString(len: number, an?: string) {
   return str;
 }
 
-export { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel };
+export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel };

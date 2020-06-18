@@ -24,8 +24,12 @@ function readyStringToQuery(text: string): string {
   return '"'.concat(regulateStringLength(text), '"');
 }
 
-function readyUrlToQuery(url: string): string {
-  return '"'.concat(replacePrimeSymbol(url), '"');
+function readyUrlToQuery(url: string | null): string | null {
+  if(url){
+    return '"'.concat(replacePrimeSymbol(url), '"');
+  } else {
+    return null
+  }
 }
 
 export {setCharAt, regulateStringLength, replacePrimeSymbol, readyStringToQuery, readyUrlToQuery};

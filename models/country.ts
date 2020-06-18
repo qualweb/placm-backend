@@ -2,7 +2,7 @@ import { success, error } from "../lib/responses";
 import { COUNTRY_JSON } from "../lib/constants";
 import { execute_query, execute_query_proto } from "../lib/database";
 
-const add_countries = async () => {
+/*const add_countries = async () => {
   let result: any = {
     entries: [],
     countries: [],
@@ -30,7 +30,7 @@ const add_countries = async () => {
     throw error(err);
   }
   return success(result);
-};
+};*/
 
 const get_data_by_country = async () => {
   let query;
@@ -72,23 +72,24 @@ const get_data_by_country = async () => {
   }
 }
 
-const get_all_country_names = async () => {
+const get_all_country_names = async (serverName: string) => {
   let query;
   try {
     query =
     `SELECT c.Name as name,
-      c.CountryId as id
+      c.CountryId as id,
+      NOW() as date
     FROM
       Country c
     GROUP BY c.Name;`;
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);
   }
 }
 
-const get_data_continent = async () => {
+const get_data_continent = async (serverName: string) => {
   let query;
   try {
     query =
@@ -124,14 +125,14 @@ const get_data_continent = async () => {
         ON a.PageId = p.PageId
     WHERE app.Deleted = '0'
     GROUP BY cont.Name;`;
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);
   }
 }
 
-const get_data_country_filtered = async (filters: any) => {
+const get_data_country_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query = 
   `SELECT c.CountryId as id, 
@@ -198,7 +199,7 @@ const get_data_country_filtered = async (filters: any) => {
   GROUP BY c.Name, c.CountryId;`);
 
   try {
-    let result = (await execute_query_proto(query));
+    let result = (await execute_query(serverName, query));
     return success(result);
   } catch(err){
     return error(err);

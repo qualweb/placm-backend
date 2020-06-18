@@ -27,7 +27,7 @@ router.get('/byCountry', async function (req, res, next) {
 
 router.get('/allContinentData', async function (req, res, next) {
   try {
-      await get_data_continent()
+      await get_data_continent(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -39,7 +39,7 @@ router.get('/allContinentData', async function (req, res, next) {
 router.get('/allCountryDataFiltered', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_country_filtered(filters)
+    await get_data_country_filtered(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -50,7 +50,7 @@ router.get('/allCountryDataFiltered', async function (req, res, next) {
 
 router.get('/countryNames', async function (req, res, next) {
   try {
-      await get_all_country_names()
+    await get_all_country_names(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

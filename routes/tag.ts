@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/allTagDataFiltered', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered(filters)
+    await get_data_filtered(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/allTagDataFiltered', async function (req, res, next) {
 
 router.get('/tagsNames', async function (req, res, next) {
   try {
-      await get_all_tags_names()
+      await get_all_tags_names(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
