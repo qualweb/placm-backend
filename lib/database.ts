@@ -1,8 +1,8 @@
 //const { DbError } = require("./_error");
-import {createConnection, Connection, ConnectionConfig} from 'mysql';
+import {createConnection, Connection} from 'mysql';
 import {DB_CONFIG_PROTO, DB_CONFIG_PROTO_PT} from './constants';
 
-function execute_query(serverName: string, query: any, multipleStats: boolean = false): Promise<any> {
+function execute_query(serverName: string, query: any, queryParams: any[] = [], multipleStats: boolean = false): Promise<any> {
   return new Promise(async (resolve, reject) => {
 
     /*let session;
@@ -21,10 +21,6 @@ function execute_query(serverName: string, query: any, multipleStats: boolean = 
 
     let connection: Connection;
     switch(serverName) {
-      case 'proto':
-        DB_CONFIG_PROTO['multipleStatements'] = multipleStats;
-        connection = createConnection(DB_CONFIG_PROTO);
-        break;
       case 'pt':
         DB_CONFIG_PROTO_PT['multipleStatements'] = multipleStats;
         connection = createConnection(DB_CONFIG_PROTO_PT);
@@ -37,11 +33,11 @@ function execute_query(serverName: string, query: any, multipleStats: boolean = 
 
     connection.connect();
 
-    connection.query(query, (err: any, res: unknown) => {
+    connection.query(query, queryParams, (err: any, res: unknown) => {
       connection.end();
       if (err) {
         console.log(err);
-        //reject(new DbError(err));
+        reject(new Error(err.message));
       } else {
         resolve(res);
       }

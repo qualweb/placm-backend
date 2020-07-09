@@ -1,4 +1,4 @@
-const success = (result = null) => {
+const success = (result: any = null) => {
   return {
     success: 1,
     message: "NO_ERROR",
@@ -7,7 +7,7 @@ const success = (result = null) => {
   };
 };
 
-const error = (err: { code: any; message: any; err: any }, result = null) => {
+const error = (err: { code: any; message: any; err: any }, result: any = null) => {
   return {
     success: err.code,
     message: err.message,

@@ -4,6 +4,8 @@ import * as DB_CONFIG_PROTO_PT from './../db_config_proto_pt.json';
 import * as COUNTRY_JSON from './country-by-continent.json';
 import * as CONSTELLATIONS_JSON from './constellations.json';
 import * as PROTODATA_JSON from './protodata.json';
+import * as RULES_JSON from './act-rules_mapping.json';
+import * as WCAG21 from './wcag21.json';
 
 const maxTextLength = 255;
 
@@ -19,4 +21,5 @@ const DB_NAMES: { [key: string]: string } = {
 }
 
 export {DB_CONFIG, DB_CONFIG_PROTO, DB_CONFIG_PROTO_PT, COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON,
+        RULES_JSON, WCAG21,
         maxTextLength, emailRegex, twitterRegex, telephoneRegex, urlRegex, DB_NAMES};
