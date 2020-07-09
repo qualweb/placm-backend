@@ -1,8 +1,8 @@
 import { success, error } from "../../lib/responses";
 import { execute_query } from "../../lib/database";
-import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON, urlRegex, DB_NAMES } from "../../lib/constants";
+import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON, urlRegex, DB_NAMES, WCAG21, RULES_JSON } from "../../lib/constants";
 import * as fs from 'fs';
-import { trim, includes, map, truncate } from "lodash";
+import { trim, includes, map } from "lodash";
 import path from "path";
 import puppeteer from "puppeteer";
 import { parse } from 'node-html-parser';
@@ -20,11 +20,11 @@ const reset_database = async (serverName: string) => {
   let query;
   const dbName: string = DB_NAMES[serverName];
   try {
-    // get all table names except country and continent
+    // get all table names except those 5
     query = `SELECT 
     CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS truncateCommand
     FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME NOT IN ("Country", "Continent");
+    WHERE TABLE_SCHEMA = ? AND TABLE_NAME NOT IN ("Country", "Continent", "Rule", "SuccessCriteria", "RuleSuccessCriteria");
     `;
     let truncates = await execute_query(serverName, query);
 
@@ -34,13 +34,54 @@ const reset_database = async (serverName: string) => {
       query = query.concat(trunc.truncateCommand).concat('\n');
     }
     query = query.concat(`\nSET FOREIGN_KEY_CHECKS=1;`);
-    await execute_query(serverName, query, true);
+    await execute_query(serverName, query, [dbName], true);
 
   } catch (err){
     console.log(err);
     return error(err);
   }
-  return success();
+  return success(true);
+}
+
+const prepare_database = () => {
+  let query;
+  let continents: string[] = [];
+  for (let c of Object.values(COUNTRY_JSON)) {
+    if(c.continent){
+      if(!continents.includes(c.continent)){
+        query = `INSERT INTO Continent (name) VALUES ("${c.continent}");`;
+        console.log(query);
+        continents.push(c.continent);
+      }
+      query = `INSERT INTO Country (name, continentId) VALUES ("${c.country}", "${continents.indexOf(c.continent)}");`;
+      console.log(query);
+    }
+  }
+  for (let p of Object.values(WCAG21['principles'])) {
+    let guidelines = p['guidelines'];
+    for (let g of Object.values(guidelines)){
+      for (let s of <any> Object.values(g['successcriteria'])){
+        let initialUrl = 'https://www.w3.org/WAI/WCAG21/Understanding/';
+        let preparingUrl = s['handle'].replace(/\(\)/,'').replace(' ','-').toLowerCase();
+        let url = initialUrl + preparingUrl;
+        query = `INSERT INTO SuccessCriteria (SCId, Name, Principle, Level, Url) VALUES ("${s.num}", "${s.handle}", "${p.handle}", "${s.level}", "${url}");`;
+        console.log(query);
+      }
+    }
+  }
+
+  let i = 1;
+  for(let r of Object.values(RULES_JSON)) {
+    query = `INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("${r.mapping}", "${r.name}", "${r.metadata.url}", "${r.description}");`;
+    console.log(query);
+    if(r['metadata']['success-criteria'] !== []){
+      for(let sc of r['metadata']['success-criteria']){
+        query = `INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("${i}", "${sc.name}");`;
+        console.log(query);
+      }
+    }
+    i++;
+  }
 }
 
 const add_filedata = async (serverName: string) => {
@@ -89,7 +130,7 @@ const add_filedata = async (serverName: string) => {
             result.evaluationTools.push(evalTool.insertId);
           };
           break;
-        case 'Rule':
+        /*case 'Rule':
           query = `SELECT RuleId FROM Rule WHERE name = "${entry['name']}";`;
           rule = (await execute_query(serverName, query))[0];
           if (!rule) {
@@ -103,7 +144,7 @@ const add_filedata = async (serverName: string) => {
             rule = await execute_query(serverName, query);
             result.rules.push(rule.insertId);
           };
-          break;
+          break;*/
         default:
           break;
     }
@@ -184,21 +225,20 @@ const add_filedata = async (serverName: string) => {
 
       // Assertion
       for(let r = 1; r <= numberTools; r++) {
+        let ruleId = Math.floor(Math.random() * 66) + 1;
         assertionDesc = randomString(15,'a');
         assertionOutcome = outcomes[Math.floor(Math.random()*5)];
 
         query = `SELECT AssertionId FROM Assertion WHERE 
               evaluationtoolid = "$evaluationToolId}" AND
-              ruleid = "${r}" AND
+              ruleid = "${ruleId}" AND
               pageid = "${pageId}" AND
               mode = "automatic" AND
-              date = "${appDate}" AND
-              description = "${assertionDesc}" AND
-              outcome = "${assertionOutcome}";`;
+              date = "${appDate}";`;
         assertion = (await execute_query(serverName, query))[0];
         if (!assertion) {
           query = `INSERT INTO Assertion (evaluationtoolid, ruleid, pageid, mode, date, description, outcome)
-              VALUES ("${evaluationToolId}", "${r}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
+              VALUES ("${evaluationToolId}", "${ruleId}", "${pageId}", "automatic", "${appDate}", "${assertionDesc}", "${assertionOutcome}");`;
           assertion = await execute_query(serverName, query);
           result.assertions.push(assertion.insertId);
         };
@@ -660,4 +700,4 @@ function randomString(len: number, an?: string) {
   return str;
 }
 
-export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel };
+export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, prepare_database };

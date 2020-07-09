@@ -38,6 +38,7 @@ const get_all_data = async () => {
 
 const get_data_rule_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
   let query = 
   `SELECT r.Name as name,
     r.RuleId as id,
@@ -49,28 +50,34 @@ const get_data_rule_filtered = async (serverName: string, filters: any) => {
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`);
   }
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`)
   }
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (?)) as tagNames`);
   }
   if(filters.orgIds){
+    params.push(filters.orgIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (${filters.orgIds})) as orgNames`);
+    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (?)) as orgNames`);
   }
   if(filters.appIds){
+    params.push(filters.appIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (${filters.appIds})) as appNames`);
+    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (?)) as appNames`);
   }
   if(filters.evalIds){
+    params.push(filters.evalIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (${filters.evalIds}) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`);
+    (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (?) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`);
   }
     
   query = query.concat(`
@@ -80,19 +87,21 @@ const get_data_rule_filtered = async (serverName: string, filters: any) => {
     Rule r`);
 
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`
     INNER JOIN
       TagApplication ta
         ON ta.ApplicationId = app.ApplicationId
-        AND ta.TagId IN (${filters.tagIds})`);
+        AND ta.TagId IN (?)`);
   }
 
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN (${filters.continentIds})`);
+        AND c.ContinentId IN (?)`);
   }
 
   query = query.concat(`
@@ -112,30 +121,35 @@ const get_data_rule_filtered = async (serverName: string, filters: any) => {
   WHERE app.Deleted = '0'`);
 
   if(filters.appIds){
+    params.push(filters.appIds);
     query = query.concat(`
-    AND app.ApplicationId IN (${filters.appIds})`);
+    AND app.ApplicationId IN (?)`);
   }
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`
-    AND app.CountryId IN (${filters.countryIds})`);
+    AND app.CountryId IN (?)`);
   }
   if(filters.sectorIds){
+    params.push(filters.sectorIds);
     query = query.concat(`
-    AND app.Sector IN (${filters.sectorIds})`);
+    AND app.Sector IN (?)`);
   }
   if(filters.orgIds){
+    params.push(filters.orgIds);
     query = query.concat(`
-    AND app.OrganizationId IN (${filters.orgIds})`);
+    AND app.OrganizationId IN (?)`);
   }
   if(filters.evalIds){
+    params.push(filters.evalIds);
     query = query.concat(`
-    AND a.EvaluationToolId IN (${filters.evalIds})`);
+    AND a.EvaluationToolId IN (?)`);
   }
   query = query.concat(`
   GROUP BY r.Name, r.RuleId;`);
 
   try {
-    let result = (await execute_query(serverName, query));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

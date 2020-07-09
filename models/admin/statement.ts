@@ -25,7 +25,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       }
     }
   }
-  console.log(linksRead);
 
   let origin;
   let asUrl;
@@ -66,6 +65,14 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
   let application: any, asSQL: any, contact: any;
 
   for(let i = 0; i < statements.length; i++){
+
+      /* ---------- handle origin ---------- */
+    if(formData.generator === null || formData.generator.trim() === ''){
+      origin = 'unknown';
+    } else {
+      origin = formData.generator;
+    }
+
     if(formData.org === null || formData.org.trim() === ''){
       /* ---------- handle organization name ---------- */
       orgElem = statements[i].querySelectorAll(".mr.mr-e-name");
@@ -83,19 +90,16 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       orgName = formData.org;
     }
     orgName = readyStringToQuery(orgName);
-    console.log(orgName);
 
     /* ---------- handle application name ---------- */
     if(formData.appName === null || formData.appName.trim() === ''){
       nameElem = statements[i].querySelectorAll(".mr.mr-t-desc");
       if(nameElem.length){
         name = nameElem[0].childNodes[0].text;
-        origin = "govpt";
       } else {
         nameElem = statements[i].querySelectorAll(".basic-information.website-name");
         if(nameElem.length){
           name = nameElem[0].text;
-          origin = "w3c";
         }
       }
     } else {
@@ -103,6 +107,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     }
     name = readyStringToQuery(name);
     console.log(name);
+    console.log(origin);
 
 
     /* ---------- handle application url ---------- */
@@ -365,7 +370,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     date = date === undefined ? new Date().toISOString().slice(0, 19).replace('T', ' ') : new Date(date).toISOString().slice(0, 19).replace('T', ' ');
     appCountry = formData.country ? formData.country.id : null;
 
-    origin = origin === undefined ? 'unknown' : readyStringToQuery(origin);
+    origin = origin === undefined ? '"unknown"' : readyStringToQuery(origin);
     asUrl = linksRead[i] === undefined ? null : readyUrlToQuery(linksRead[i]);
     standard = standard === undefined ? 'unknown' : standard;
     sealText = sealText === undefined ? null : readyStringToQuery(sealText);

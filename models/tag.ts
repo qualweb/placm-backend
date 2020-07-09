@@ -74,6 +74,7 @@ const get_all_tag_data = async () => {
 
 const get_data_filtered = async (serverName: any, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
   let query = 
   `SELECT t.TagId as id,
     t.Name as name,
@@ -86,12 +87,14 @@ const get_data_filtered = async (serverName: any, filters: any) => {
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
     
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`,
-      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`);
   }
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`,
-      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`)
   }
 
   query = query.concat(`
@@ -105,11 +108,12 @@ const get_data_filtered = async (serverName: any, filters: any) => {
       ON t.TagId = ta.TagId`);
 
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN (${filters.continentIds})`);
+        AND c.ContinentId IN (?)`);
   }
 
   query = query.concat(`
@@ -128,18 +132,20 @@ const get_data_filtered = async (serverName: any, filters: any) => {
   WHERE app.Deleted = '0'`);
 
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`
-    AND app.CountryId IN (${filters.countryIds})`);
+    AND app.CountryId IN (?)`);
   }
   if(filters.sectorIds){
+    params.push(filters.sectorIds);
     query = query.concat(`
-    AND app.Sector IN (${filters.sectorIds})`);
+    AND app.Sector IN (?)`);
   }
   query = query.concat(`
   GROUP BY t.TagId, t.Name;`);
 
   try {
-    let result = (await execute_query(serverName, query));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

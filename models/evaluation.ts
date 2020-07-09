@@ -37,6 +37,7 @@ let query;
 
 const get_data_evaluation_tool_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
   let query = 
   `SELECT eval.Name as name,
     eval.EvaluationToolId as id,
@@ -48,24 +49,29 @@ const get_data_evaluation_tool_filtered = async (serverName: string, filters: an
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`);
   }
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`)
   }
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (?)) as tagNames`);
   }
   if(filters.orgIds){
+    params.push(filters.orgIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (${filters.orgIds})) as orgNames`);
+    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (?)) as orgNames`);
   }
   if(filters.appIds){
+    params.push(filters.appIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (${filters.appIds})) as appNames`);
+    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (?)) as appNames`);
   }
   
   query = query.concat(`
@@ -75,19 +81,21 @@ const get_data_evaluation_tool_filtered = async (serverName: string, filters: an
       Application app`);
 
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`
     INNER JOIN
       TagApplication ta
         ON ta.ApplicationId = app.ApplicationId
-        AND ta.TagId IN (${filters.tagIds})`);
+        AND ta.TagId IN (?)`);
   }
 
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`
     INNER JOIN
       Country c
         ON c.CountryId = app.CountryId
-        AND c.ContinentId IN (${filters.continentIds})`);
+        AND c.ContinentId IN (?)`);
   }
 
   query = query.concat(`
@@ -107,26 +115,30 @@ const get_data_evaluation_tool_filtered = async (serverName: string, filters: an
   WHERE app.Deleted = '0'`);
 
   if(filters.appIds){
+    params.push(filters.appIds);
     query = query.concat(`
-    AND app.ApplicationId IN (${filters.appIds})`);
+    AND app.ApplicationId IN (?)`);
   }
   if(filters.countryIds){
+    params.push(filters.countryIds);
     query = query.concat(`
-    AND app.CountryId IN (${filters.countryIds})`);
+    AND app.CountryId IN (?)`);
   }
   if(filters.sectorIds){
+    params.push(filters.sectorIds);
     query = query.concat(`
-    AND app.Sector IN (${filters.sectorIds})`);
+    AND app.Sector IN (?)`);
   }
   if(filters.orgIds){
+    params.push(filters.orgIds);
     query = query.concat(`
-    AND app.OrganizationId IN (${filters.orgIds})`);
+    AND app.OrganizationId IN (?)`);
   }
   query = query.concat(`
   GROUP BY eval.Name, eval.EvaluationToolId;`);
 
   try {
-    let result = (await execute_query(serverName, query));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

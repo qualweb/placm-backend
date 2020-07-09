@@ -134,6 +134,7 @@ const get_data_continent = async (serverName: string) => {
 
 const get_data_country_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
   let query = 
   `SELECT c.CountryId as id, 
     c.Name as name, 
@@ -149,12 +150,14 @@ const get_data_country_filtered = async (serverName: string, filters: any) => {
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
     
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`);
   }
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (?)) as tagNames`);
   }
 
   query = query.concat(`
@@ -168,16 +171,18 @@ const get_data_country_filtered = async (serverName: string, filters: any) => {
       ON c.ContinentId = cont.ContinentId`); 
 
   if(filters.continentIds){
+    params.push(filters.continentIds);
     query = query.concat(`
-    AND c.ContinentId IN (${filters.continentIds})`);
+    AND c.ContinentId IN (?)`);
   }
 
   if(filters.tagIds){
+    params.push(filters.tagIds);
     query = query.concat(`
     INNER JOIN
       TagApplication ta
         ON ta.ApplicationId = app.ApplicationId
-        AND ta.TagId IN (${filters.tagIds})`);
+        AND ta.TagId IN (?)`);
   }
 
   query = query.concat(`
@@ -199,7 +204,7 @@ const get_data_country_filtered = async (serverName: string, filters: any) => {
   GROUP BY c.Name, c.CountryId;`);
 
   try {
-    let result = (await execute_query(serverName, query));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

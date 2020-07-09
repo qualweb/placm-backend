@@ -1,7 +1,5 @@
 import express from "express";
-import { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, reset_database} from "../../models/admin/proto"
-import { create } from "lodash";
-import { query } from "express-validator/check";
+import { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, reset_database, prepare_database} from "../../models/admin/proto"
 
 const router = express.Router();
 
@@ -47,6 +45,10 @@ router.get('/reset', async function (req, res, next) {
     console.log(err);
     res.send(err);
   }
+});
+
+router.get('/preparedb', async function (req, res, next) {
+  prepare_database();
 });
 
 export = router;

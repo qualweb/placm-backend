@@ -14,10 +14,10 @@ import tagRouter from './routes/tag';
 import applicationRouter from './routes/application';
 import pageRouter from './routes/page';
 import ruleRouter from './routes/rule';
+import criteriaRouter from './routes/criteria';
 import evaluationRouter from './routes/evaluation';
 import adminReportRouter from "./routes/admin/report";
 import adminStatementRouter from "./routes/admin/statement";
-
 
 const app = express();
 app.use(compression());
@@ -34,6 +34,7 @@ app.use('/country', countryRouter);
 app.use('/tag', tagRouter);
 app.use('/application', applicationRouter);
 app.use('/page', pageRouter);
+app.use('/sc', criteriaRouter);
 app.use('/rule', ruleRouter);
 app.use('/evaluation', evaluationRouter);
 
