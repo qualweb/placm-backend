@@ -60,7 +60,6 @@ router.get('/countryData', async function (req, res, next) {
 });
 
 router.get('/continentDataSC', async function (req, res, next) {
-  console.log("ola");
   try {
       await get_data_sc('continent', req.query.name)
       .then((result: any) => res.send(result))
