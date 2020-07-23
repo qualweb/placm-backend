@@ -1,6 +1,6 @@
 import { success, error } from "../../lib/responses";
 import { execute_query } from "../../lib/database";
-import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON, urlRegex, DB_NAMES, WCAG21, RULES_JSON } from "../../lib/constants";
+import { COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON, urlRegex, DB_NAMES, WCAG21, RULES_JSON, ELEMENT_TYPES } from "../../lib/constants";
 import * as fs from 'fs';
 import { trim, includes, map } from "lodash";
 import path from "path";
@@ -31,9 +31,9 @@ const reset_database = async (serverName: string) => {
     // deleting all content from tables
     query = `SET FOREIGN_KEY_CHECKS=0;\n\n`;
     for(let trunc of truncates){
-      query = query.concat(trunc.truncateCommand).concat('\n');
+      query = query + trunc.truncateCommand + '\n';
     }
-    query = query.concat(`\nSET FOREIGN_KEY_CHECKS=1;`);
+    query = query + `\nSET FOREIGN_KEY_CHECKS=1;`;
     await execute_query(serverName, query, [dbName], true);
 
   } catch (err){
@@ -41,6 +41,109 @@ const reset_database = async (serverName: string) => {
     return error(err);
   }
   return success(true);
+}
+
+const group_elems = () => {
+  let result = "[";
+  let exceptions = ['80f0bf','4c31df','aaa1bf','59796f'];
+  for(let r of Object.values(RULES_JSON)){
+    if(exceptions.includes(r.mapping)){
+      if(r.mapping == '59796f'){
+        result = result + '\n  {\n    ';
+        result = result + '"mapping":"' + r.mapping + '",\n    "type":"image"\n  },';
+        result = result + '\n  {\n    ';
+        result = result + '"mapping":"' + r.mapping + '",\n    "type":"button"\n  },';
+      } else {
+        result = result + '\n  {\n    ';
+        result = result + '"mapping":"' + r.mapping + '",\n    "type":"audio"\n  },';
+        result = result + '\n  {\n    ';
+        result = result + '"mapping":"' + r.mapping + '",\n    "type":"video"\n  },';
+      }
+    } else if (r.name) {
+      result = result + '\n  {\n    ';
+      result = result + '"mapping":"' + r.mapping + '",\n    "type":"';
+      if(r.name.toLowerCase().includes('iframe')){
+        result = result + 'iframe"\n  },';
+      } else if (r.name.toLowerCase().includes('button')){
+        result = result + 'button"\n  },';
+      } else if (r.name.toLowerCase().includes('autocomplete')){
+        result = result + 'input"\n  },';
+      } else if (r.name.toLowerCase().includes('link')){
+        result = result + 'link"\n  },';
+      } else if (r.name.toLowerCase().includes('heading')){
+        result = result + 'heading"\n  },';
+      } else if (r.name.toLowerCase().includes('video')){
+        result = result + 'video"\n  },';
+      } else if (r.name.toLowerCase().includes('lang')){
+        result = result + 'lang"\n  },';
+      } else if (r.name.toLowerCase().includes('meta')){
+        result = result + 'meta"\n  },';
+      } else if (r.name.toLowerCase().includes('object')){
+        result = result + 'object"\n  },';
+      } else if (r.name.toLowerCase().includes('title')){
+        result = result + 'title"\n  },';
+      } else if (r.name.toLowerCase().includes('table')){
+        result = result + 'table"\n  },';
+      } else if (r.name.toLowerCase().includes('focusable element')){
+        result = result + 'other"\n  },';
+      } else if (r.name.toLowerCase().includes('audio element')){
+        result = result + 'audio"\n  },';
+      } else if (r.name.toLowerCase().includes('image') || r.name.toLowerCase().includes('svg')){
+        result = result + 'image"\n  },';
+      } else if (r.name.toLowerCase().includes('form control') || r.name.toLowerCase().includes('form field')){
+        result = result + 'form"\n  },';
+      } else if (r.name.toLowerCase().includes('aria') || r.name.toLowerCase().includes('visible label') || r.name.toLowerCase().includes('role attribute')){
+        result = result + 'aria"\n  },';
+      } else if (r.name.toLowerCase().includes('attribute is not') || r.name.toLowerCase().includes('id attribute')){
+        result = result + 'attributes"\n  },';
+      } else if (r.name.toLowerCase().includes('css') || r.name.toLowerCase().includes('contrast') || r.name.toLowerCase().includes('scrollable')){
+        result = result + 'css"\n  },';
+      }
+    }
+    /*if(r && r.metadata && r.metadata.target && r.metadata.target.elements){
+      result.push(r.metadata.target.elements.toString());
+    }*/
+  }
+  result = result.substring(0, result.length - 1);
+  result = result + "\n]";
+  console.log(result);
+}
+
+const update_rules_table_element_type = () => {
+  let i = 1;
+  let mappings: string[] = [];
+  let types: string[] = [];
+  let query;
+
+  for(let r of Object.values(RULES_JSON)) {
+    if(r.metadata){
+      if(!mappings.includes(r.mapping))
+        mappings.push(r.mapping);
+      query = `INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("${r.mapping}", "${r.name}", "${r.metadata.url}", "${r.description}");`;
+      console.log(query);
+      if(r['metadata']['success-criteria'] !== []){
+        for(let sc of r['metadata']['success-criteria']){
+          query = `INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("${i}", "${sc.name}");`;
+          console.log(query);
+        }
+      }
+      i++;
+    }
+  }
+
+  i = 1;
+  for (let e of Object.values(ELEMENT_TYPES)){
+    if(e.type){
+      if(!types.includes(e.type)){
+        types.push(e.type);
+        query = `INSERT INTO ElementType (TypeId, Name) VALUES ("${i}", "${e.type}");`;
+        console.log(query);
+        i++;
+      }
+      query = `INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("${mappings.indexOf(e.mapping) + 1}", "${types.indexOf(e.type) + 1}");`;
+      console.log(query);
+    }
+  }
 }
 
 const prepare_database = () => {
@@ -71,16 +174,37 @@ const prepare_database = () => {
   }
 
   let i = 1;
+  let mappings: string[] = [];
+  let types: string[] = [];
+
   for(let r of Object.values(RULES_JSON)) {
-    query = `INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("${r.mapping}", "${r.name}", "${r.metadata.url}", "${r.description}");`;
-    console.log(query);
-    if(r['metadata']['success-criteria'] !== []){
-      for(let sc of r['metadata']['success-criteria']){
-        query = `INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("${i}", "${sc.name}");`;
-        console.log(query);
+    if(r.metadata){
+      if(!mappings.includes(r.mapping))
+        mappings.push(r.mapping);
+      query = `INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("${r.mapping}", "${r.name}", "${r.metadata.url}", "${r.description}");`;
+      console.log(query);
+      if(r['metadata']['success-criteria'] !== []){
+        for(let sc of r['metadata']['success-criteria']){
+          query = `INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("${i}", "${sc.name}");`;
+          console.log(query);
+        }
       }
+      i++;
     }
-    i++;
+  }
+
+  i = 1;
+  for (let e of Object.values(ELEMENT_TYPES)){
+    if(e.type){
+      if(!types.includes(e.type)){
+        types.push(e.type);
+        query = `INSERT INTO ElementType (TypeId, Name) VALUES ("${i}", "${e.type}");`;
+        console.log(query);
+        i++;
+      }
+      query = `INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("${mappings.indexOf(e.mapping) + 1}", "${types.indexOf(e.type) + 1}");`;
+      console.log(query);
+    }
   }
 }
 
@@ -122,7 +246,7 @@ const add_filedata = async (serverName: string) => {
             if(entry['data1'] === ''){
               url = null;
             } else {
-              url = '"'.concat(entry['data1'],'"');
+              url = '"' + entry['data1'] + '"';
             }
             query = `INSERT INTO EvaluationTool (name, url, description, version)
                 VALUES ("${entry['name']}", ${url}, "${entry['data2']}", "${entry['data3']}");`;
@@ -167,18 +291,18 @@ const add_filedata = async (serverName: string) => {
     appName = possibleAppNames[randomIndex];
     possibleAppNames.splice(randomIndex, 1);
 
-    appUrl = "http://www.".concat(randomString(10,'a')).concat('.com');
-    appDate = '2020-0'.concat((Math.floor(Math.random()*9)+1).toString())
-        .concat('-')
-        .concat(Math.floor(Math.random()*3).toString())
-        .concat((Math.floor(Math.random()*9)+1).toString())
-        .concat(' 00:00:00');
+    appUrl = "http://www." + randomString(10,'a') + '.com';
+    appDate = '2020-0' + (Math.floor(Math.random()*9)+1).toString()
+         + '-'
+         + Math.floor(Math.random()*3).toString()
+         + (Math.floor(Math.random()*9)+1).toString()
+         + ' 00:00:00';
     query = `SELECT ApplicationId FROM Application WHERE name = "${appName}";`;
     app = (await execute_query(serverName, query))[0];
     if (!app) {
       let organizationName = randomWords({ exactly: 1 })[0];
       organizationName = organizationName.charAt(0).toUpperCase() + organizationName.slice(1);
-      organizationName = organizationName.concat(' ').concat(orgsExtensions[Math.floor(Math.random()*3)]);
+      organizationName = organizationName + ' ' + orgsExtensions[Math.floor(Math.random()*3)];
       query = `SELECT OrganizationId FROM Organization WHERE name = "${organizationName}";`;
       organization = (await execute_query(serverName, query))[0];
       if(!organization){
@@ -212,7 +336,7 @@ const add_filedata = async (serverName: string) => {
     // Page
     //for(let j = 0; j < numberPages; j++) {
     for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
-      pageUrl = appUrl.concat('/').concat(randomString(10));
+      pageUrl = appUrl + '/' + randomString(10);
       query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
       page = (await execute_query(serverName, query))[0];
       if (!page) {
@@ -358,7 +482,7 @@ async function correct_urls_files_json() {
     website = website === null ? [] : website;
     if(website.length){
       protocol = website[1];
-      cleanJsonUrl = protocol.concat('/', website[3]);
+      cleanJsonUrl = protocol + '/', website[3];
     } else {
       cleanJsonUrl = url;
     }
@@ -377,7 +501,7 @@ async function correct_urls_files_json() {
       let result = await page.goto(cleanJsonUrl);
       if(result !== null){
         if(result.status() >= 400){
-          failedLinks.push([fileNumber.toString(), entities[index], url, "0 - ".concat(result.status().toString())]);
+          failedLinks.push([fileNumber.toString(), entities[index], url, "0 - " + result.status().toString()]);
           console.log("oops");
         } else {
           differentLinks.push([fileNumber.toString(), entities[index], url, await page.url()]);
@@ -388,7 +512,7 @@ async function correct_urls_files_json() {
         console.log("oops");
       }
     } catch (error) {
-      failedLinks.push([fileNumber.toString(), entities[index], url, "2 - error ".concat(error)]);
+      failedLinks.push([fileNumber.toString(), entities[index], url, "2 - error " + error]);
       console.log("oops");
     }
     index++;
@@ -429,16 +553,16 @@ async function correct_urls_files_json() {
   for(let fl of failedLinks){
     switch(fl[0]){
       case '1':
-        result = result.concat('Amostra2015;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        result = result + 'Amostra2015;' + fl[1] + ';' + fl[2] + ';' + fl[3] + '\n';
         break;
       case '2':
-        result = result.concat('EnsinoSuperior;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        result = result + 'EnsinoSuperior;' + fl[1] + ';' + fl[2] + ';' + fl[3] + '\n';
         break;
       case '3':
-        result = result.concat('Municipios;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        result = result + 'Municipios;' + fl[1] + ';' + fl[2] + ';' + fl[3] + '\n';
         break;
       case '4':
-        result = result.concat('ONG;', fl[1], ';', fl[2], ';', fl[3],'\n');
+        result = result + 'ONG;' + fl[1] + ';' + fl[2] + ';' + fl[3] + '\n';
         break;
       default:
         break;
@@ -452,7 +576,7 @@ async function correct_urls_files_json() {
     website = website === null ? [] : website;
     if(website.length){
       protocol = website[1];
-      domain = protocol.concat('/', website[3]);
+      domain = protocol + '/' + website[3];
     } else {
       domain = data[3];
     }
@@ -461,16 +585,16 @@ async function correct_urls_files_json() {
     let cleanRedirectedUrl = domain[domain.length - 1] === '/' ? domain.substring(0, domain.length - 1) : domain;
       switch(data[0]){
         case '1':
-          difference = difference.concat('Amostra2015;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          difference = difference + 'Amostra2015;' + data[1] + ';' + data[2] + ';' + cleanRedirectedUrl + '\n';
           break;
         case '2':
-          difference = difference.concat('EnsinoSuperior;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          difference = difference + 'EnsinoSuperior;' + data[1] + ';' + data[2] + ';' + cleanRedirectedUrl + '\n';
           break;
         case '3':
-          difference = difference.concat('Municipios;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          difference = difference + 'Municipios;' + data[1] + ';' + data[2] + ';' + cleanRedirectedUrl + '\n';
           break;
         case '4':
-          difference = difference.concat('ONG;', data[1], ';', data[2], ';', cleanRedirectedUrl, '\n');
+          difference = difference + 'ONG;' + data[1] + ';' + data[2] + ';' + cleanRedirectedUrl + '\n';
           break;
         default:
           break;
@@ -539,7 +663,7 @@ async function add_as_from_links_excel() {
 
   for (let sheet in workbook){
     for (let row of workbook[sheet]){
-      excelLinks = excelLinks.concat(trim(row['new_url']), '\n');
+      excelLinks = excelLinks + trim(row['new_url']) + '\n';
     }
   }
 
@@ -582,13 +706,13 @@ async function add_as_from_links_excel() {
           console.log(queueItem.url);
         });
         crawler.on("fetcherror", function (queueItem: any, responseBuffer: any) {
-          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+          fs.appendFile('failed_urls.txt', queueItem.url + '\n', function (err) {
             if (err) throw err;
             console.log(c.bold.red('Fetch Error >'), queueItem.url);
           });
         });
         crawler.on("fetchtimeout", function (queueItem: any, timeoutVal: any) {
-          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+          fs.appendFile('failed_urls.txt', queueItem.url + '\n', function (err) {
             if (err) throw err;
             console.log(c.bold.red('Fetch Timeout Error >'), queueItem.url);
           });
@@ -599,7 +723,7 @@ async function add_as_from_links_excel() {
         /* testar nas universidades para saber se vale a pena ter isto
         crawler.on("fetchclienterror", function(queueItem: any, error: any) {
           crawler.stop();
-          fs.appendFile('failed_urls.txt', queueItem.url.concat('\n'), function (err) {
+          fs.appendFile('failed_urls.txt', queueItem.url + '\n'), function (err) {
             if (err) throw err;
             console.log(c.bold.red('Fetch Client Error >'), queueItem.url);
           });
@@ -609,7 +733,7 @@ async function add_as_from_links_excel() {
         crawler.on('complete', function () {
           crawler.stop();
           if(!urls.some(u => u.includes('/acessibilidade'))){
-            urls.push(url[url.length-1] === '/' ? url.concat('acessibilidade') : url.concat('/acessibilidade'));
+            urls.push(url[url.length-1] === '/' ? url + 'acessibilidade' : url + '/acessibilidade');
           }
           console.log('> Crawling complete at', url,'with',urls.length,'urls found');
           resolve(urls);
@@ -637,7 +761,7 @@ async function add_as_from_links_excel() {
               html = parse(responseText);
               element = await html.querySelectorAll(".mr.mr-e-name,.basic-information.organization-name");
               if(await element.length){
-                fs.appendFile('as_urls.txt', link.concat('\n'), function (err) {
+                fs.appendFile('as_urls.txt', link + '\n', function (err) {
                   if (err) throw err;
                   console.log(c.bold.green('### Found an Accessibility Statement'));
                 });
@@ -648,7 +772,7 @@ async function add_as_from_links_excel() {
           })
           .catch((err: any) => {
             console.log(c.red(err));
-            fs.appendFile('failed_urls.txt', link.concat('\n'), function (err) {
+            fs.appendFile('failed_urls.txt', link + '\n', function (err) {
               if (err) throw err;
               console.log(c.bold.red('### Saved -'), link);
           });
@@ -700,4 +824,4 @@ function randomString(len: number, an?: string) {
   return str;
 }
 
-export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, prepare_database };
+export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, prepare_database, group_elems, update_rules_table_element_type };

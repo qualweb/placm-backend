@@ -72,9 +72,10 @@ const get_all_tag_data = async () => {
   }
 }
 
-const get_data_filtered = async (serverName: any, filters: any) => {
+const get_data = async (serverName: any, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
+  let filtered, splitted;
   let query = 
   `SELECT t.TagId as id,
     t.Name as name,
@@ -86,37 +87,38 @@ const get_data_filtered = async (serverName: any, filters: any) => {
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
     
-  if(filters.continentIds){
-    params.push(filters.continentIds);
-    query = query.concat(`,
-      (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`);
-  }
-  if(filters.countryIds){
-    params.push(filters.countryIds);
-    query = query.concat(`,
-      (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`)
+  if(filters.continentIds && filters.continentIds !== '0'){
+    filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`;
   }
 
-  query = query.concat(`
+  if(filters.countryIds && filters.countryIds !== '0'){
+    filtered = filters.countryIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`
+  }
+
+  query = query + `
   FROM
     Application app
-  INNER JOIN
+  LEFT JOIN
     TagApplication ta
       ON ta.ApplicationId = app.ApplicationId
-  INNER JOIN
+  LEFT JOIN
     Tag t
-      ON t.TagId = ta.TagId`);
+      ON t.TagId = ta.TagId`;
 
   if(filters.continentIds){
-    params.push(filters.continentIds);
-    query = query.concat(`
-    INNER JOIN
+    query = query + `
+    LEFT JOIN
       Country c
-        ON c.CountryId = app.CountryId
-        AND c.ContinentId IN (?)`);
+        ON c.CountryId = app.CountryId`;
   }
 
-  query = query.concat(`
+  query = query + `
   INNER JOIN
     Page p
       ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
@@ -129,20 +131,56 @@ const get_data_filtered = async (serverName: any, filters: any) => {
       AND a.Deleted = '0'
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
-  WHERE app.Deleted = '0'`);
+  WHERE app.Deleted = '0'`;
+
+  if(filters.continentIds){
+    splitted = filters.continentIds.split(',');
+    if(filters.continentIds === '0'){
+      query = query + `
+      AND c.ContinentId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (c.ContinentId is null OR c.ContinentId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND c.ContinentId IN (?)`;
+    }
+  }
 
   if(filters.countryIds){
-    params.push(filters.countryIds);
-    query = query.concat(`
-    AND app.CountryId IN (?)`);
+    splitted = filters.countryIds.split(',');
+    if(filters.countryIds === '0'){
+      query = query + `
+      AND app.CountryId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (app.CountryId is null OR app.CountryId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND app.CountryId IN (?)`;
+    }
   }
+
   if(filters.sectorIds){
-    params.push(filters.sectorIds);
-    query = query.concat(`
-    AND app.Sector IN (?)`);
+    params.push(filters.sectorIds.split(','));
+    query = query + `
+    AND app.Sector IN (?)`;
   }
-  query = query.concat(`
-  GROUP BY t.TagId, t.Name;`);
+  
+  query = query + `
+  GROUP BY 1, 2`;
 
   try {
     let result = (await execute_query(serverName, query, params));
@@ -152,4 +190,158 @@ const get_data_filtered = async (serverName: any, filters: any) => {
   }
 }
 
-export {get_data_filtered, get_all_tags_names};
+const get_data_sc = async (serverName: string, filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
+  let filtered, splitted;
+  let query =
+  `DROP TABLE IF EXISTS workingTable;
+  CREATE TEMPORARY TABLE workingTable AS
+  SELECT t.TagId as id,
+  t.Name as name,
+  scriteria.SCId,
+  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
+  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
+  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+  COUNT(DISTINCT scriteria.SCId, IF(a.AssertionId IS NULL OR a.Outcome = 'untested', 1, NULL)) as untested
+  FROM
+    Application app
+  LEFT JOIN
+    TagApplication ta
+      ON ta.ApplicationId = app.ApplicationId
+  LEFT JOIN
+    Tag t
+      ON t.TagId = ta.TagId`;
+
+  if(filters.continentIds){
+    query = query + `
+    LEFT JOIN
+      Country c
+        ON c.CountryId = app.CountryId`;
+  }
+
+  query = query + `
+  INNER JOIN
+    Page p
+    ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+  INNER JOIN
+    (SELECT SCId, RuleId
+        FROM RuleSuccessCriteria scr
+    UNION ALL
+    SELECT SCId, NULL as RuleId
+      FROM SuccessCriteria sc
+            WHERE SCId NOT IN (SELECT SCId FROM RuleSuccessCriteria scr)) scriteria
+  LEFT JOIN
+    (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
+    FROM
+    Assertion a
+    WHERE
+    date = (SELECT max(a1.Date) 
+        FROM Assertion a1 
+        WHERE a.RuleId = a1.RuleId 
+        AND a.PageId = a1.PageId)
+    AND a.Deleted = '0'
+    ORDER BY date DESC) a
+    ON a.PageId = p.PageId
+        AND scriteria.RuleId = a.RuleId
+  WHERE app.Deleted = '0' AND scriteria.SCId is not null`;
+
+  if(filters.continentIds){
+    splitted = filters.continentIds.split(',');
+    if(filters.continentIds === '0'){
+      query = query + `
+      AND c.ContinentId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (c.ContinentId is null OR c.ContinentId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND c.ContinentId IN (?)`;
+    }
+  }
+
+  if(filters.countryIds){
+    splitted = filters.countryIds.split(',');
+    if(filters.countryIds === '0'){
+      query = query + `
+      AND app.CountryId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (app.CountryId is null OR app.CountryId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND app.CountryId IN (?)`;
+    }
+  }
+
+  if(filters.sectorIds){
+    params.push(filters.sectorIds.split(','));
+    query = query + `
+    AND app.Sector IN (?)`;
+  }
+
+  query = query + `
+  GROUP BY 1, 3
+  ORDER BY 1, 2, 3;`;
+
+  query = query + `
+  UPDATE workingTable
+    SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0
+    WHERE failed = 1;
+  UPDATE workingTable
+    SET passed = 0, inapplicable = 0, untested = 0
+    WHERE failed = 0 AND cantTell = 1;
+  UPDATE workingTable
+    SET inapplicable = 0, untested = 0
+    WHERE failed = 0 AND cantTell = 0 AND passed = 1;
+  UPDATE workingTable
+    SET untested = 0
+    WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 1;
+  
+  SELECT id, name, 
+    SUM(failed) as nFailed, 
+    SUM(cantTell) as nCantTell,
+    SUM(passed) as nPassed,
+    SUM(inapplicable) as nInapplicable,
+    SUM(untested) as nUntested`;
+
+  if(filters.continentIds && filters.continentIds !== '0'){
+    filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`;
+  }
+
+  if(filters.countryIds && filters.countryIds !== '0'){
+    filtered = filters.countryIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`
+  }
+
+  query = query + `
+  FROM workingTable
+  GROUP BY 1, 2;`;
+
+  try {
+    let result = (await execute_query(serverName, query, params, true));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+export {get_all_tags_names, get_data, get_data_sc};

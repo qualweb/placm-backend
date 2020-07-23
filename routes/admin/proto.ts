@@ -1,5 +1,5 @@
 import express from "express";
-import { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, reset_database, prepare_database} from "../../models/admin/proto"
+import { add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, reset_database, prepare_database, group_elems, update_rules_table_element_type} from "../../models/admin/proto"
 
 const router = express.Router();
 
@@ -23,6 +23,14 @@ router.post('/addCountries', async function (req, res, next) {
     console.log(err);
     res.send(err);
   }
+});
+
+router.get('/idc', async function(req, res, next) {
+  await group_elems();
+});
+
+router.get('/idc2', async function(req, res, next) {
+  await update_rules_table_element_type();
 });
 
 router.get('/findASLinks', async function (req, res, next) {

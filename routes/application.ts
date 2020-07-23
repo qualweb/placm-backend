@@ -3,7 +3,7 @@ import { get_data_filtered, get_data_filtered_sc } from "../models/application";
 
 const router = express.Router();
 
-router.get('/appDataFiltered', async function (req, res, next) {
+router.get('/appData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
@@ -16,7 +16,7 @@ router.get('/appDataFiltered', async function (req, res, next) {
   }
 });
 
-router.get('/sectorDataFiltered', async function (req, res, next) {
+router.get('/sectorData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
@@ -29,7 +29,7 @@ router.get('/sectorDataFiltered', async function (req, res, next) {
   }
 });
 
-router.get('/orgDataFiltered', async function (req, res, next) {
+router.get('/orgData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
@@ -42,7 +42,7 @@ router.get('/orgDataFiltered', async function (req, res, next) {
   }
 });
 
-router.get('/appDataSucCriteria', async function (req, res, next) {
+router.get('/appDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
@@ -55,7 +55,7 @@ router.get('/appDataSucCriteria', async function (req, res, next) {
   }
 });
 
-router.get('/sectorDataSucCriteria', async function (req, res, next) {
+router.get('/sectorDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
@@ -68,7 +68,7 @@ router.get('/sectorDataSucCriteria', async function (req, res, next) {
   }
 });
 
-router.get('/orgDataSucCriteria', async function (req, res, next) {
+router.get('/orgDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};

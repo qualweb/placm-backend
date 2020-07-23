@@ -10,7 +10,7 @@ function regulateStringLength(text: string): string {
   let result = trim(text);
   if (text.length > maxTextLength) {
     result = text.substring(0, maxTextLength - 4);
-    result.concat("...");
+    result += "...";
   }
   result = replacePrimeSymbol(result);
   return result;
@@ -21,12 +21,12 @@ function replacePrimeSymbol(text: string): string {
 }
 
 function readyStringToQuery(text: string): string {
-  return '"'.concat(regulateStringLength(text), '"');
+  return '"' + regulateStringLength(text) + '"';
 }
 
 function readyUrlToQuery(url: string | null): string | null {
   if(url){
-    return '"'.concat(replacePrimeSymbol(url), '"');
+    return '"' + replacePrimeSymbol(url) + '"';
   } else {
     return null
   }

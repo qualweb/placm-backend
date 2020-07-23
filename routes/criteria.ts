@@ -3,11 +3,11 @@ import { get_data_success_criteria_filtered } from "../models/criteria";
 
 const router = express.Router();
 
-router.get('/allSCDataFiltered', async function (req, res, next) {
+router.get('/scData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
     await get_data_success_criteria_filtered(req.query.name, filters)
-      .then((result: any) => {
+      .then((result: any) => {/* 
         console.log(result);
         console.log(result.result.length);
         let assertions = 0;
@@ -17,7 +17,7 @@ router.get('/allSCDataFiltered', async function (req, res, next) {
           pages+= a.nPages;
         }
         console.log("assertions", assertions);
-        console.log("pages", pages);
+        console.log("pages", pages); */
         res.send(result);})
       .catch((err: any) => res.send(err));
   } catch (err) {

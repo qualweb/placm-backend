@@ -3,6 +3,8 @@ import { execute_query } from "../lib/database";
 
 const get_data_success_criteria_filtered = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let params = [];
+  let filtered, splitted;
   let query = 
   `SELECT sc.Name as name,
     sc.SCId as id,
@@ -15,36 +17,51 @@ const get_data_success_criteria_filtered = async (serverName: string, filters: a
     COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
-  if(filters.continentIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (${filters.continentIds})) as continentNames`);
+
+  if(filters.continentIds && filters.continentIds !== '0'){
+    filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(cont.Name) FROM Continent cont WHERE cont.ContinentId IN (?)) as continentNames`;
   }
-  if(filters.countryIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (${filters.countryIds})) as countryNames`)
+
+  if(filters.countryIds && filters.countryIds !== '0'){
+    filtered = filters.countryIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(c.Name) FROM Country c WHERE c.CountryId IN (?)) as countryNames`
   }
-  if(filters.tagIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (${filters.tagIds})) as tagNames`);
+
+  if(filters.tagIds && filters.tagIds !== '0'){
+    filtered = filters.tagIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
+    params.push(filtered);
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (?)) as tagNames`;
   }
+
   if(filters.orgIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (${filters.orgIds})) as orgNames`);
+    params.push(filters.orgIds.split(','));
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (?)) as orgNames`;
   }
+
   if(filters.appIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (${filters.appIds})) as appNames`);
+    params.push(filters.appIds.split(','));
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(app.Name) FROM Application app WHERE app.ApplicationId IN (?)) as appNames`;
   }
+
   if(filters.evalIds){
-    query = query.concat(`,
-    (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (${filters.evalIds}) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`);
+    params.push(filters.evalIds.split(','));
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (?) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`;
   }
     
-  query = query.concat(`
+  query = query + `
   FROM
-    Application app`);
+    Application app`;
     
-  query = query.concat(`
+  query = query + `
   INNER JOIN
     Page p
       ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
@@ -60,57 +77,119 @@ const get_data_success_criteria_filtered = async (serverName: string, filters: a
       AND a.Deleted = '0'
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
-  LEFT JOIN
+  INNER JOIN
     RuleSuccessCriteria scr
       ON scr.RuleId = a.RuleId
-  LEFT JOIN
+  INNER JOIN
     SuccessCriteria sc
-      ON scr.SCId = sc.SCId`);
+      ON scr.SCId = sc.SCId`;
 
   if(filters.tagIds){
-    query = query.concat(`
-    INNER JOIN
+    query = query + `
+    LEFT JOIN
       TagApplication ta
-        ON ta.ApplicationId = app.ApplicationId
-        AND ta.TagId IN (${filters.tagIds})`);
+        ON ta.ApplicationId = app.ApplicationId`;
   }
 
   if(filters.continentIds){
-    query = query.concat(`
-    INNER JOIN
+    query = query + `
+    LEFT JOIN
       Country c
-        ON c.CountryId = app.CountryId
-        AND c.ContinentId IN (${filters.continentIds})`);
+        ON c.CountryId = app.CountryId`;
   }
 
-  query = query.concat(`
-  WHERE app.Deleted = '0'`);
+  query = query + `
+  WHERE app.Deleted = '0'`;
+
+  if(filters.continentIds){
+    splitted = filters.continentIds.split(',');
+    if(filters.continentIds === '0'){
+      query = query + `
+      AND c.ContinentId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (c.ContinentId is null OR c.ContinentId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND c.ContinentId IN (?)`;
+    }
+  }
+
+  if(filters.countryIds){
+    splitted = filters.countryIds.split(',');
+    if(filters.countryIds === '0'){
+      query = query + `
+      AND app.CountryId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (app.CountryId is null OR app.CountryId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND app.CountryId IN (?)`;
+    }
+  }
+
+  if(filters.tagIds){
+    splitted = filters.tagIds.split(',');
+    if(filters.tagIds === '0'){
+      query = query + `
+      AND ta.TagId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (ta.TagId is null OR ta.TagId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND ta.TagId IN (?)`;
+    }
+  }
 
   if(filters.appIds){
-    query = query.concat(`
-    AND app.ApplicationId IN (${filters.appIds})`);
+    params.push(filters.appIds.split(','));
+    query = query + `
+    AND app.ApplicationId IN (?)`;
   }
-  if(filters.countryIds){
-    query = query.concat(`
-    AND app.CountryId IN (${filters.countryIds})`);
-  }
+
   if(filters.sectorIds){
-    query = query.concat(`
-    AND app.Sector IN (${filters.sectorIds})`);
+    params.push(filters.sectorIds.split(','));
+    query = query + `
+    AND app.Sector IN (?)`;
   }
+
   if(filters.orgIds){
-    query = query.concat(`
-    AND app.OrganizationId IN (${filters.orgIds})`);
+    params.push(filters.orgIds.split(','));
+    query = query + `
+    AND app.OrganizationId IN (?)`;
   }
+
   if(filters.evalIds){
-    query = query.concat(`
-    AND a.EvaluationToolId IN (${filters.evalIds})`);
+    params.push(filters.evalIds.split(','));
+    query = query + `
+    AND a.EvaluationToolId IN (?)`;
   }
-  query = query.concat(`
-  GROUP BY sc.SCId;`);
+
+  query = query + `
+  GROUP BY 2;`;
 
   try {
-    let result = (await execute_query(serverName, query));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

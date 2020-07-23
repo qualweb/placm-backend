@@ -15,6 +15,21 @@ CREATE TABLE `Rule` (
   -- UNIQUE KEY `Url_idx` (`Url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `ElementType` (
+  `TypeId` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(255) NOT NULL,
+  PRIMARY KEY (`TypeId`),
+  UNIQUE KEY `Name_UNIQUE` (`Name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `RuleElementType` (
+  `RuleId` int NOT NULL,
+  `TypeId` int NOT NULL,
+  PRIMARY KEY (`RuleId`,`TypeId`),
+  CONSTRAINT `Rule_ET_fk` FOREIGN KEY (`RuleId`) REFERENCES `Rule` (`RuleId`) ON DELETE CASCADE,
+  CONSTRAINT `ElemType_Rule_fk` FOREIGN KEY (`TypeId`) REFERENCES `ElementType` (`TypeId`) ON DELETE CASCADE
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `SuccessCriteria` (
   `SCId` varchar(10) NOT NULL,
   `Name` varchar(255) NOT NULL,
@@ -593,10 +608,10 @@ INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("d0f69e", "All table 
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("1", "1.3.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("ff89c9", "ARIA required context role", "https://act-rules.github.io/rules/ff89c9", "This rule checks that an element with an explicit semantic role exists inside its required context.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("2", "1.3.1");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("bc4a75", "ARIA required owned elements", "https://act-rules.github.io/rules/bc4a75", "This rule checks that an element with an explicit semantic role has at least one of its required owned elements.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("bc4a75", "ARIA required owned elements", "https://act-rules.github.io/rules/bc4a75", "This rule checks that an element with an explicit semantic role has at least one of its required owned elements.");     
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("3", "1.3.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("6a7281", "ARIA state or property has valid value", "https://act-rules.github.io/rules/6a7281", "This rule checks that each ARIA state or property has a valid value.");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("5c01ea", "ARIA state or property is permitted", "https://act-rules.github.io/rules/5c01ea", "This rule checks that WAI-ARIA states or properties are allowed for the element they are specified on.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("5c01ea", "ARIA state or property is permitted", "https://act-rules.github.io/rules/5c01ea", "This rule checks that WAI-ARIA states or properties are allowed for the element they are specified on.");        
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("5f99a7", "aria-* attribute is defined in WAI-ARIA", "https://act-rules.github.io/rules/5f99a7", "This rule checks that each aria- attribute specified is defined in ARIA 1.1.");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("e6952f", "Attribute is not duplicated", "https://act-rules.github.io/rules/e6952f", "This rule checks that HTML and SVG starting tags do not contain duplicated attributes.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("7", "4.1.1");
@@ -615,8 +630,7 @@ INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("15", "4.1.2");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("6cfa84", "Element with `aria-hidden` has no focusable content", "https://act-rules.github.io/rules/6cfa84", "This rule checks that elements with an aria-hidden attribute do not contain focusable elements.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("16", "1.3.1");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("16", "4.1.2");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("de46e4", "Element with lang attribute has valid language tag", "https://act-rules.github.io/rules/de46e4", "This rule checks that a non-empty lang attribute of an element in the page body has a language tag with a known 
-primary language subtag.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("de46e4", "Element with lang attribute has valid language tag", "https://act-rules.github.io/rules/de46e4", "This rule checks that a non-empty lang attribute of an element in the page body has a language tag with a known primary language subtag.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("17", "3.1.2");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("4e8ab6", "Element with role attribute has required states and properties", "https://act-rules.github.io/rules/4e8ab6", "This rule checks that elements that have an explicit role also specify all required states and properties.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("18", "4.1.2");
@@ -630,7 +644,8 @@ INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("e086e5", "Form contr
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("23", "4.1.2");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("cc0f0a", "Form control label is descriptive", "https://act-rules.github.io/rules/cc0f0a", "This rule checks that labels describe the purpose of form field elements.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("24", "2.4.6");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("a25f45", "Headers attribute specified on a cell refers to cells in the same table element", "https://act-rules.github.io/rules/a25f45", "This rule checks that the headers attribute on a cell refer to other cells in the same table element.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("a25f45", "Headers attribute specified on a cell refers to cells in the same table element", "https://act-rules.github.io/rules/a25f45", "This rule checks that the headers attribute on a cell refer to other 
+cells in the same table element.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("25", "1.3.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("ffd0e9", "Heading has non-empty accessible name", "https://act-rules.github.io/rules/ffd0e9", "This rule checks that each heading has a non-empty accessible name.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("26", "1.3.1");
@@ -643,7 +658,8 @@ INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("2779a5", "HTML page 
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("29", "2.4.2");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("5b7ae0", "HTML page lang and xml:lang attributes have matching values", "https://act-rules.github.io/rules/5b7ae0", "This rule checks that all HTML pages with both a lang and xml:lang attributes on the root element, have the same primary language subtag.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("30", "3.1.1");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("bf051a", "HTML page lang attribute has valid language tag", "https://act-rules.github.io/rules/bf051a", "This rule checks that the lang attribute of the root element of an HTML page has a language tag with a known primary language subtag.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("bf051a", "HTML page lang attribute has valid language tag", "https://act-rules.github.io/rules/bf051a", "This rule checks that the lang attribute of the root element of an HTML page has a language tag with 
+a known primary language subtag.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("31", "3.1.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("c4a8a4", "HTML page title is descriptive", "https://act-rules.github.io/rules/c4a8a4", "This rule checks that the first title in an HTML page describes the topic or purpose of that page.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("32", "2.4.2");
@@ -689,28 +705,118 @@ INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("0ssw9k", "Scrollable
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("49", "2.1.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("7d6734", "svg element with explicit role has non-empty accessible name", "https://act-rules.github.io/rules/7d6734", "This rule checks that each SVG image element that is explicitly included in the accessibility tree has a non-empty accessible name.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("50", "1.1.1");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("afw4f7", "Text has minimum contrast", "https://act-rules.github.io/rules/afw4f7", "This rule checks that the highest possible contrast of every text character with its background meets the minimal contrast requirement.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("afw4f7", "Text has minimum contrast", "https://act-rules.github.io/rules/afw4f7", "This rule checks that the highest possible contrast of every text character with its background meets the minimal contrast 
+requirement.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("51", "1.4.3");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("51", "1.4.6");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("eac66b", "video element auditory content has accessible alternative", "https://act-rules.github.io/rules/eac66b", "This rule checks that video elements have an alternative for information conveyed through audio.");      
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("eac66b", "video element auditory content has accessible alternative", "https://act-rules.github.io/rules/eac66b", "This rule checks that video elements have an alternative for information conveyed through audio.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("52", "1.2.2");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("f51b46", "video element auditory content has captions", "https://act-rules.github.io/rules/f51b46", "This rule checks that captions are available for audio information in non-streaming video elements.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("f51b46", "video element auditory content has captions", "https://act-rules.github.io/rules/f51b46", "This rule checks that captions are available for audio information in non-streaming video elements.");   
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("ab4d13", "video element content is media alternative for text", "https://act-rules.github.io/rules/ab4d13", "This rule checks non-streaming video is a media alternative for text on the page.");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("c5a4ea", "video element visual content has accessible alternative", "https://act-rules.github.io/rules/c5a4ea", "This rule checks that video elements with audio have an alternative for the video content as audio or as text.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("c5a4ea", "video element visual content has accessible alternative", "https://act-rules.github.io/rules/c5a4ea", "This rule checks that video elements with audio have an alternative for the video content as 
+audio or as text.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("55", "1.2.3");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("1ea59c", "video element visual content has audio description", "https://act-rules.github.io/rules/1ea59c", "This rule checks that non-streaming video elements have all visual information also contained in the audio.");  
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("f196ce", "video element visual content has description track", "https://act-rules.github.io/rules/f196ce", "This rule checks that description tracks that come with non-streaming video elements are descriptive.");        
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("1ea59c", "video element visual content has audio description", "https://act-rules.github.io/rules/1ea59c", "This rule checks that non-streaming video elements have all visual information also contained in the audio.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("f196ce", "video element visual content has description track", "https://act-rules.github.io/rules/f196ce", "This rule checks that description tracks that come with non-streaming video elements are descriptive.");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("1ec09b", "video element visual content has strict accessible alternative", "https://act-rules.github.io/rules/1ec09b", "This rule checks that video elements with audio have audio description.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("58", "1.2.5");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("1a02b0", "video element visual content has transcript", "https://act-rules.github.io/rules/1a02b0", "This rule checks that non-streaming video elements have all audio and visual information available in a transcript."); 
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("1a02b0", "video element visual content has transcript", "https://act-rules.github.io/rules/1a02b0", "This rule checks that non-streaming video elements have all audio and visual information available in a transcript.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("59", "1.2.8");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("c3232f", "video element visual-only content has accessible alternative", "https://act-rules.github.io/rules/c3232f", "This rule checks that video elements without audio have an alternative available.");
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("c3232f", "video element visual-only content has accessible alternative", "https://act-rules.github.io/rules/c3232f", "This rule checks that video elements without audio have an alternative available.");    
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("60", "1.2.1");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("d7ba54", "video element visual-only content has audio track alternative", "https://act-rules.github.io/rules/d7ba54", "Non-streaming video elements without audio must have an audio alternative.");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("ac7dc6", "video element visual-only content has description track", "https://act-rules.github.io/rules/ac7dc6", "This rule checks that description tracks that come with non-streaming video elements, without audio, are descriptive.");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("ee13b5", "video element visual-only content has transcript", "https://act-rules.github.io/rules/ee13b5", "Non-streaming video elements without audio must have all visual information available in a transcript.");
-INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("fd26cf", "video element visual-only content is media alternative for text", "https://act-rules.github.io/rules/fd26cf", "This rule checks non-streaming silent video is a media alternative for text on the page.");        
+INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("fd26cf", "video element visual-only content is media alternative for text", "https://act-rules.github.io/rules/fd26cf", "This rule checks non-streaming silent video is a media alternative for text on the page.");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("2ee8b8", "Visible label is part of accessible name", "https://act-rules.github.io/rules/2ee8b8", "This rule checks that interactive elements labeled through their content have their visible label as part of their accessible name.");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("65", "2.5.3");
 INSERT INTO Rule (Mapping, Name, Url, Description) VALUES ("59br37", "Zoomed text node is not clipped with CSS overflow", "https://act-rules.github.io/rules/59br37", "This rule checks that text nodes are not unintentionally clipped by overflow, when a page is zoomed to 200% on 1280 by 1024 viewport;");
 INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES ("66", "1.4.4");
+INSERT INTO ElementType (TypeId, Name) VALUES ("1", "table");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("1", "1");
+INSERT INTO ElementType (TypeId, Name) VALUES ("2", "aria");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("2", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("3", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("4", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("5", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("6", "2");
+INSERT INTO ElementType (TypeId, Name) VALUES ("3", "attributes");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("7", "3");
+INSERT INTO ElementType (TypeId, Name) VALUES ("4", "audio");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("8", "4");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("9", "4");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("10", "4");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("11", "4");
+INSERT INTO ElementType (TypeId, Name) VALUES ("5", "video");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("11", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("12", "4");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("12", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("13", "4");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("13", "5");
+INSERT INTO ElementType (TypeId, Name) VALUES ("6", "input");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("14", "6");
+INSERT INTO ElementType (TypeId, Name) VALUES ("7", "button");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("15", "7");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("16", "2");
+INSERT INTO ElementType (TypeId, Name) VALUES ("8", "lang");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("17", "8");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("18", "2");
+INSERT INTO ElementType (TypeId, Name) VALUES ("9", "form");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("19", "9");
+INSERT INTO ElementType (TypeId, Name) VALUES ("10", "other");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("20", "10");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("21", "10");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("22", "10");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("23", "9");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("24", "9");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("25", "1");
+INSERT INTO ElementType (TypeId, Name) VALUES ("11", "heading");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("26", "11");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("27", "11");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("28", "8");
+INSERT INTO ElementType (TypeId, Name) VALUES ("12", "title");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("29", "12");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("30", "8");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("31", "8");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("32", "12");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("33", "3");
+INSERT INTO ElementType (TypeId, Name) VALUES ("13", "iframe");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("34", "13");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("35", "13");
+INSERT INTO ElementType (TypeId, Name) VALUES ("14", "image");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("36", "14");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("36", "7");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("37", "14");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("38", "14");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("39", "14");
+INSERT INTO ElementType (TypeId, Name) VALUES ("15", "link");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("40", "15");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("41", "15");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("42", "15");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("43", "15");
+INSERT INTO ElementType (TypeId, Name) VALUES ("16", "meta");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("44", "16");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("45", "16");
+INSERT INTO ElementType (TypeId, Name) VALUES ("17", "object");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("46", "17");
+INSERT INTO ElementType (TypeId, Name) VALUES ("18", "css");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("47", "18");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("48", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("49", "18");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("50", "14");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("51", "18");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("52", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("53", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("54", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("55", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("56", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("57", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("58", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("59", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("60", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("61", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("62", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("63", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("64", "5");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("65", "2");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("66", "18");

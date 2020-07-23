@@ -1,5 +1,5 @@
 import express from "express";
-import { get_all_data, get_data_rule_filtered } from "../models/rule";
+import { get_all_data, get_data_rule_filtered, get_data_element_type } from "../models/rule";
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.get('/allData', async function (req, res, next) {
   }
 });
 
-router.get('/allRuleDataFiltered', async function (req, res, next) {
+router.get('/ruleData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
     await get_data_rule_filtered(req.query.name, filters)
@@ -25,5 +25,19 @@ router.get('/allRuleDataFiltered', async function (req, res, next) {
       res.send(err);
   }
 });
+
+router.get('/elemData', async function (req, res, next) {
+  try {
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_element_type(req.query.name, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+
 
 export = router;
