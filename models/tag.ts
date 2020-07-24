@@ -180,7 +180,8 @@ const get_data = async (serverName: any, filters: any) => {
   }
   
   query = query + `
-  GROUP BY 1, 2`;
+  GROUP BY 1, 2
+  ORDER BY 2;`;
 
   try {
     let result = (await execute_query(serverName, query, params));
@@ -334,7 +335,8 @@ const get_data_sc = async (serverName: string, filters: any) => {
 
   query = query + `
   FROM workingTable
-  GROUP BY 1, 2;`;
+  GROUP BY 1, 2
+  ORDER BY 2;`;
 
   try {
     let result = (await execute_query(serverName, query, params, true));

@@ -40,8 +40,9 @@ const get_data_evaluation_tool = async (serverName: string, filters: any) => {
   let params = [];
   let filtered, splitted;
   let query = 
-  `SELECT eval.Name as name,
+  `SELECT 
     eval.EvaluationToolId as id,
+    eval.Name as name,
     COUNT(DISTINCT p.PageId) as nPages,
     COUNT(DISTINCT a.AssertionId) as nAssertions,
     COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
@@ -198,7 +199,8 @@ const get_data_evaluation_tool = async (serverName: string, filters: any) => {
   }
 
   query = query + `
-  GROUP BY 2, 1;`;
+  GROUP BY 1, 2
+  ORDER BY 2;`;
 
   try {
     let result = (await execute_query(serverName, query, params));
@@ -406,7 +408,8 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
 
   query = query + `
   FROM workingTable
-  GROUP BY 1, 2;`;
+  GROUP BY 1, 2
+  ORDER BY 2;`;
 
   try {
     let result = (await execute_query(serverName, query, params, true));

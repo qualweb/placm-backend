@@ -186,7 +186,8 @@ const get_data_success_criteria_filtered = async (serverName: string, filters: a
   }
 
   query = query + `
-  GROUP BY 2;`;
+  GROUP BY 2
+  ORDER BY 2;`;
 
   try {
     let result = (await execute_query(serverName, query, params));
