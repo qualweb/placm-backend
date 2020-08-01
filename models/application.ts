@@ -541,6 +541,12 @@ const get_data_filtered_sc = async (tableName: string, serverName: string, filte
     query = query + `,
     (SELECT JSON_ARRAYAGG(t.Name) FROM Tag t WHERE t.TagId IN (?)) as tagNames`;
   }
+  
+  if(filters.orgIds){
+    params.push(filters.orgIds.split(','));
+    query = query + `,
+      (SELECT JSON_ARRAYAGG(org.Name) FROM Organization org WHERE org.OrganizationId IN (?)) as orgNames`;
+  }
 
   query = query + `
   FROM workingTable
@@ -556,31 +562,36 @@ const get_data_filtered_sc = async (tableName: string, serverName: string, filte
 }
 
 const get_all_sc_data_app = async(serverName: string, filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let query;
-  let appId = filters.appIds ? filters.appIds : null;
+  let appId = filters.appIds ? filters.appIds.split(',') : null;
   try {
     query =
-    `SELECT sc.*,
-    (SELECT JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'id', a.assertionid,
-        'eval', eval.name,
-        'rulename', r.name,
-        'page', p.url,
-        'outcome', a.outcome,
-        'description', a.description))) as assertions,
-    COUNT(DISTINCT p.PageId) as nPages,
-    COUNT(DISTINCT a.AssertionId) as nAssertions,
-    COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-    COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-    COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-    COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM Apiplication app
+    `DROP TABLE IF EXISTS workingTable;
+    CREATE TEMPORARY TABLE workingTable AS
+    SELECT 
+      sc.*,
+      (SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id', a.assertionid,
+          'eval', eval.name,
+          'rulename', r.name,
+          'rulelink', r.url,
+          'page', p.url,
+          'outcome', a.outcome,
+          'description', a.description))) as assertions,
+      COUNT(DISTINCT p.PageId) as nPages,
+      COUNT(DISTINCT a.AssertionId) as nAssertions,
+      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as passed,
+      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as failed,
+      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as untested
+    FROM Application app
     INNER JOIN
-        Page p
-          ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
-      INNER JOIN
+      Page p
+        ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    INNER JOIN
       (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId, a.Description
         FROM
           Assertion a
@@ -592,23 +603,49 @@ const get_all_sc_data_app = async(serverName: string, filters: any) => {
           AND a.Deleted = '0'
         ORDER BY date DESC) a
           ON a.PageId = p.PageId
-      LEFT JOIN
-        RuleSuccessCriteria scr
-          ON scr.RuleId = a.RuleId
-      LEFT JOIN
-        SuccessCriteria sc
-          ON scr.SCId = sc.SCId
-      INNER JOIN
-        EvaluationTool eval
-          on eval.EvaluationToolId = a.EvaluationToolId
-      INNER JOIN
-        rule r
-          on r.RuleId = a.RuleId
+    INNER JOIN
+      RuleSuccessCriteria scr
+        ON scr.RuleId = a.RuleId
+    INNER JOIN
+      SuccessCriteria sc
+        ON scr.SCId = sc.SCId
+    INNER JOIN
+      EvaluationTool eval
+        on eval.EvaluationToolId = a.EvaluationToolId
+    INNER JOIN
+      rule r
+        on r.RuleId = a.RuleId
     WHERE app.Deleted = '0'
-    AND app.ApplicationId = ?
-    GROUP BY sc.SCID;`;
+    AND app.ApplicationId IN (?)
+    GROUP BY 1;
     
-    let result = (await execute_query(serverName, query, [appId]));
+    
+    ALTER TABLE workingTable
+    ADD COLUMN outcome VARCHAR(25) AFTER untested;
+
+    UPDATE workingTable
+      SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0, outcome = 'failed'
+      WHERE failed >= 1;
+    UPDATE workingTable
+      SET passed = 0, inapplicable = 0, untested = 0, outcome = 'cantTell'
+      WHERE failed = 0 AND cantTell >= 1;
+    UPDATE workingTable
+      SET inapplicable = 0, untested = 0, outcome = 'passed'
+      WHERE failed = 0 AND cantTell = 0 AND passed >= 1;
+    UPDATE workingTable
+      SET untested = 0, outcome = 'inapplicable'
+      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable >= 1;
+    UPDATE workingTable
+      SET outcome = 'untested'
+      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 0 AND untested >= 1;
+      
+    SELECT SCId, Name, Principle, Level, Url, Assertions, nPages, nAssertions,
+      outcome
+      FROM workingTable
+    GROUP BY 1, 2
+    ORDER BY 1;`;
+    
+    let result = (await execute_query(serverName, query, [appId], true));
     return success(result);
   } catch(err){
     return error(err);

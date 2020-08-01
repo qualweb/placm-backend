@@ -165,7 +165,8 @@ const prepare_database = () => {
     for (let g of Object.values(guidelines)){
       for (let s of <any> Object.values(g['successcriteria'])){
         let initialUrl = 'https://www.w3.org/WAI/WCAG21/Understanding/';
-        let preparingUrl = s['handle'].replace(/\(\)/,'').replace(' ','-').toLowerCase();
+        //todo fix this
+        let preparingUrl = s['handle'].replace(/\(\)/g,'').replace(' ','-').toLowerCase();
         let url = initialUrl + preparingUrl;
         query = `INSERT INTO SuccessCriteria (SCId, Name, Principle, Level, Url) VALUES ("${s.num}", "${s.handle}", "${p.handle}", "${s.level}", "${url}");`;
         console.log(query);

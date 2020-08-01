@@ -1,5 +1,5 @@
 import express from "express";
-import { get_data_filtered, get_data_filtered_sc } from "../models/application";
+import { get_data_filtered, get_data_filtered_sc, get_all_sc_data_app } from "../models/application";
 
 const router = express.Router();
 
@@ -80,5 +80,20 @@ router.get('/orgDataSC', async function (req, res, next) {
       res.send(err);
   }
 });
+
+router.get('/scApp', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    console.log(filters);
+    await get_all_sc_data_app(serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
 
 export = router;
