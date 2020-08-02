@@ -613,7 +613,7 @@ const get_all_sc_data_app = async(serverName: string, filters: any) => {
       EvaluationTool eval
         on eval.EvaluationToolId = a.EvaluationToolId
     INNER JOIN
-      rule r
+      Rule r
         on r.RuleId = a.RuleId
     WHERE app.Deleted = '0'
     AND app.ApplicationId IN (?)
