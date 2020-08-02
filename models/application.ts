@@ -642,7 +642,6 @@ const get_all_sc_data_app = async(serverName: string, filters: any) => {
     SELECT SCId, Name, Principle, Level, Url, Assertions, nPages, nAssertions,
       outcome
       FROM workingTable
-    GROUP BY 1, 2
     ORDER BY 1;`;
     
     let result = (await execute_query(serverName, query, [appId], true));
