@@ -26,7 +26,7 @@ const reset_database = async (serverName: string) => {
     FROM information_schema.TABLES
     WHERE TABLE_SCHEMA = ? AND TABLE_NAME NOT IN ("Country", "Continent", "Rule", "SuccessCriteria", "RuleSuccessCriteria");
     `;
-    let truncates = await execute_query(serverName, query);
+    let truncates = await execute_query(serverName, query, [dbName]);
 
     // deleting all content from tables
     query = `SET FOREIGN_KEY_CHECKS=0;\n\n`;
