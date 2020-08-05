@@ -36,7 +36,8 @@ export type EarlAssertion = {
   test?: any //EarlTest | string
   'wcagem-test'?: EarlTest | string
   result?: any //EarlTestResult
-  mode?: any
+  mode?: any,
+  assertedBy?: any
 }
 
 export type AssertionGraph = {

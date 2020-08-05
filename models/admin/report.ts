@@ -9,13 +9,14 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
   let query;
   let urlRegex, urlTested, urlRegexMatch, assertionDate;
   let toolName, toolUrl, toolDesc, toolVersion;
-  let ruleName, ruleUrl, ruleDesc;
+  let ruleName, ruleUrl, ruleDesc, ruleMapping;
   let orgName, orgId;
   let websiteName, websiteUrl, websiteCountry, websiteId;
   let websiteTags: number[] = [];
   let pageUrl;
   let assertionMode, assertionOutcome, assertionDesc;
   let evaluationTool, rule, org, website, tagSql, tagApp, page, assertionSQL;
+  let params;
 
   let assertions: Array<EarlAssertion> = [];
 
@@ -29,7 +30,6 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
   }
 
   let result: any = {
-    assertor: [],
     evaluationTool: [],
     rule: [],
     organization: [],
@@ -45,63 +45,83 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
     for (let assertion of assertions) {
       if(assertion){
         //console.log(index);
-        index++;
+        //console.log(assertion);
 
+        index++;
         urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)(.*)?(#[\w\-]+)?$/);
         urlTested = trim(assertion.subject["source"]);
         urlRegexMatch = urlTested.match(urlRegex);
         assertionDate = assertion.result["earl:date"];
 
         /* ---------- handle assertor ---------- */
-        toolName = regulateStringLength(assertion.subject["earl:assertor"]["earl:title"]["@value"]);
+        
+        let aBy, assertor;
+        if(assertion.assertedBy){
+          aBy = assertion.assertedBy;
+          for(let assert of assertion.subject['earl:assertor']){
+            if(assert['@id'] === aBy){
+              assertor = assert;
+            }
+          }
+          if(assertor === undefined) {
+            assertor = Array.isArray(assertion.subject['earl:assertor']) ? assertion.subject['earl:assertor'][0] : assertion.subject['earl:assertor'];
+          }
+        } else {
+          assertor = Array.isArray(assertion.subject['earl:assertor']) ? assertion.subject['earl:assertor'][0] : assertion.subject['earl:assertor'];
+        }
 
-        toolUrl = regulateStringLength(assertion.subject["earl:assertor"]["earl:homepage"] ? 
-          assertion.subject["earl:assertor"]["earl:homepage"] : null);
-          
-        toolDesc = assertion.subject["earl:assertor"]["earl:description"] ?
-          regulateStringLength(assertion.subject["earl:assertor"]["earl:description"]) : null;
+        if(assertor["earl:title"]){
+          //@type: earl:Software
+          toolName = assertor["earl:title"]["@value"];
+        } else {
+          //@type: earl:Person
+          toolName = assertor["earl:name"];
+        }
 
-        toolVersion = assertion.subject["earl:assertor"]["earl:hasVersion"] ?
-          regulateStringLength(assertion.subject["earl:assertor"]["earl:hasVersion"]) : null;
+        toolUrl = assertor["earl:homepage"] ? assertor["earl:homepage"] : null;
+        toolDesc = assertor["earl:description"] ? assertor["earl:description"] : null;
+        toolVersion = assertor["earl:hasVersion"] ? assertor["earl:hasVersion"] : null;
 
-        query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = "${toolName}";`;
-        evaluationTool = (await execute_query(serverName, query))[0];
+        query = `SELECT EvaluationToolId FROM EvaluationTool WHERE name = ?;`;
+        params = [toolName];
+        evaluationTool = (await execute_query(serverName, query, params))[0];
         if (!evaluationTool) {
           query = `INSERT INTO EvaluationTool (name, url, description, version)
-            VALUES ("${toolName}", "${toolUrl}", "${toolDesc}", "${toolVersion}");`;
-          evaluationTool = await execute_query(serverName, query);
+            VALUES (?, ?, ?, ?);`;
+          params = [toolName, toolUrl, toolDesc, toolVersion];
+          evaluationTool = await execute_query(serverName, query, params);
           result.evaluationTool.push(evaluationTool.insertId);
         }
 
         /* ---------- handle rule ---------- */
-        ruleName = regulateStringLength(
-          Array.isArray(assertion.test["earl:title"]) ?
-            assertion.test["earl:title"][1]["@value"] : assertion.test["earl:title"]["@value"]);
+        ruleName = Array.isArray(assertion.test["earl:title"]) ?
+            assertion.test["earl:title"][1]["@value"] : assertion.test["earl:title"]["@value"];
+        ruleUrl = assertion.test["@id"];
+        ruleDesc = Array.isArray(assertion.test["earl:description"]) ?
+            assertion.test["earl:description"][1] : assertion.test["earl:description"];
+        ruleMapping = ruleUrl.split('/')[-1];
 
-        ruleUrl = regulateStringLength(assertion.test["@id"]);
-
-        ruleDesc = regulateStringLength(
-          Array.isArray(assertion.test["earl:description"]) ?
-            assertion.test["earl:description"][1] : assertion.test["earl:description"]);
-
-        query = `SELECT RuleId FROM Rule WHERE url = "${ruleUrl}";`;
-        rule = (await execute_query(serverName, query))[0];
+        query = `SELECT RuleId FROM Rule WHERE url = ?;`;
+        params = [ruleUrl];
+        rule = (await execute_query(serverName, query, params))[0];
         if (!rule) {
-          query = `INSERT INTO Rule (name, url, description)
-            VALUES ("${ruleName}", "${ruleUrl}", "${ruleDesc}");`;
-          rule = await execute_query(serverName, query);
+          query = `INSERT INTO Rule (name, mapping, url, description)
+            VALUES (?, ?, ?, ?);`;
+          params = [ruleName, ruleMapping, ruleUrl, ruleDesc];
+          rule = await execute_query(serverName, query, params);
           result.rule.push(rule.insertId);
         }
 
         /* ---------- handle organization ---------- */
-        orgName = regulateStringLength(formData.org);
+        orgName = formData.org;
 
-        query = `SELECT OrganizationId FROM Organization WHERE name = "${orgName}";`;
-        org = (await execute_query(serverName, query))[0];
+        query = `SELECT OrganizationId FROM Organization WHERE name = ?;`;
+        params = [orgName];
+        org = (await execute_query(serverName, query, params))[0];
         if (!org) {
           query = `INSERT INTO Organization (name)
-            VALUES ("${orgName}");`;
-            org = await execute_query(serverName, query);
+            VALUES (?);`;
+          org = await execute_query(serverName, query, params);
           result.organization.push(org.insertId);
         }
         orgId = org.OrganizationId ? org.OrganizationId : org.insertId;
@@ -125,15 +145,17 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
           result.application.push(website.insertId);
         }*/
         /***                                                                  ***/
-        websiteUrl = formData.appUrl ? readyUrlToQuery(formData.appUrl) : null;
-        websiteName = regulateStringLength(formData.appName);
+        websiteUrl = formData.appUrl ? formData.appUrl : null;
+        websiteName = formData.appName;
         websiteCountry = formData.country ? formData.country.id : null;
-        query = `SELECT ApplicationId FROM Application WHERE name = "${websiteName}" AND OrganizationId = "${orgId}";`;
-        website = (await execute_query(serverName, query))[0];
+        query = `SELECT ApplicationId FROM Application WHERE name = ? AND OrganizationId = ?;`;
+        params = [websiteName, orgId];
+        website = (await execute_query(serverName, query, params))[0];
         if (!website) {
           query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
-            VALUES ("${websiteName}", ${orgId}, ${formData.type}, ${formData.sector}, ${websiteUrl}, "${assertionDate}", ${websiteCountry});`;
-          website = await execute_query(serverName, query);
+            VALUES (?, ?, ?, ?, ?, ?, ?);`;
+          params = [websiteName, orgId, formData.type, formData.sector, websiteUrl, assertionDate, websiteCountry];
+          website = await execute_query(serverName, query, params);
           result.application.push(website.insertId);
         }
         websiteId = website.ApplicationId ? website.ApplicationId : website.insertId;
@@ -144,24 +166,28 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
           if(typeof tag !== 'string'){
             tagName = tag.name;
           }
-          tagName = readyStringToQuery(tagName);
-          query = `SELECT TagId FROM Tag WHERE name = ${tagName};`;
-          tagSql = (await execute_query(serverName, query))[0];
+          //tagName = readyStringToQuery(tagName);
+          query = `SELECT TagId FROM Tag WHERE Name = ?;`;
+          params = [tagName];
+          tagSql = (await execute_query(serverName, query, params))[0];
           if(!tagSql){
             query = `INSERT INTO Tag (name)
-              VALUES (${tagName});`;
-              tagSql = await execute_query(serverName, query);
+              VALUES (?);`;
+              tagSql = await execute_query(serverName, query, params);
+            params = [ruleName, ruleUrl, ruleDesc];
             result.tag.push(tagSql.insertId);
           }
           websiteTags.push(tagSql.TagId ? tagSql.TagId : tagSql.insertId);
         }
         for(let tId of websiteTags){
-          query = `SELECT * FROM TagApplication WHERE TagId = ${tId} AND ApplicationId = ${websiteId};`;
-          tagApp = (await execute_query(serverName, query))[0];
+          query = `SELECT * FROM TagApplication WHERE TagId = ? AND ApplicationId = ?;`;
+          params = [tId, websiteId];
+          tagApp = (await execute_query(serverName, query, params))[0];
           if(!tagApp){
             query = `INSERT INTO TagApplication (TagId, ApplicationId)
-            VALUES (${tId}, ${websiteId});`;
-            tagApp = await execute_query(serverName, query);
+              VALUES (?, ?);`;
+            params = [tId, websiteId];
+            tagApp = await execute_query(serverName, query, params);
             result.tagApplication.push(tagApp.insertId);
           }
         }
@@ -170,42 +196,40 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
         //pageUrl = regulateStringLength(websiteUrl.concat(urlRegexMatch[4]));
         pageUrl = urlTested;
 
-        query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
-        page = (await execute_query(serverName, query))[0];
+        query = `SELECT PageId FROM Page WHERE url = ?;`;
+        params = [pageUrl];
+        page = (await execute_query(serverName, query, params))[0];
         if (!page) {
-          query = `INSERT INTO Page (url, creationdate, applicationid)
-            VALUES ("${pageUrl}", "${assertionDate}", "${website.insertId ||
-            website.ApplicationId}");`;
-          page = await execute_query(serverName, query);
+        query = `INSERT INTO Page (url, creationdate, applicationid)
+            VALUES (?, ?, ?);`;
+          params = [pageUrl, assertionDate, (website.insertId || website.ApplicationId)];
+          page = await execute_query(serverName, query, params);
           result.page.push(page.insertId);
         }
 
         /* ---------- handle assertion ---------- */
-        assertionMode = regulateStringLength(assertion["mode"]);
-        
-        assertionOutcome = regulateStringLength(assertion.result["outcome"]);
-
-        assertionDesc = assertion.result["earl:description"] ?
-          regulateStringLength(assertion.result["earl:description"]) : null;
+        assertionMode = assertion["mode"];
+        assertionOutcome = assertion.result["outcome"];
+        assertionDesc = assertion.result["earl:description"] ? assertion.result["earl:description"] : null;
 
         query = `SELECT AssertionId FROM Assertion 
                   WHERE 
-                  EvaluationToolId = "${evaluationTool.insertId ||
-                    evaluationTool.EvaluationToolId}" AND
-                  RuleId =  "${rule.insertId || rule.RuleId}" AND
-                  PageId = "${page.insertId || page.PageId}" AND
-                  Mode = "${assertionMode}" AND
-                  Date = "${assertionDate}" AND
-                  Description = "${assertionDesc}" AND
-                  Outcome = "${assertionOutcome}";`;
-        assertionSQL = (await execute_query(serverName, query))[0];
+                  EvaluationToolId = ? AND
+                  RuleId = ? AND
+                  PageId = ? AND
+                  Mode = ? AND
+                  Date = ? AND
+                  Description = ? AND
+                  Outcome = ?;`;
+        params = [(evaluationTool.insertId || evaluationTool.EvaluationToolId), 
+                  (rule.insertId || rule.RuleId),
+                  (page.insertId || page.PageId),
+                  assertionMode, assertionDate, assertionDesc, assertionOutcome];
+        assertionSQL = (await execute_query(serverName, query, params))[0];
         if (!assertionSQL) {
           query = `INSERT INTO Assertion (EvaluationToolId, RuleId, PageId, Mode, Date, Description, Outcome)
-                  VALUES ("${evaluationTool.insertId ||
-                    evaluationTool.EvaluationToolId}", "${rule.insertId ||
-            rule.RuleId}", "${page.insertId || page.PageId}",
-                  "${assertionMode}", "${assertionDate}", "${assertionDesc}", "${assertionOutcome}");`;
-          assertionSQL = await execute_query(serverName, query);
+                  VALUES (?, ?, ?, ?, ?, ?, ?);`;
+          assertionSQL = await execute_query(serverName, query, params);
           result.assertion.push(assertionSQL.insertId);
         }
       }

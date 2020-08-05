@@ -47,8 +47,7 @@ router.get('/findASLinks', async function (req, res, next) {
 router.get('/reset', async function (req, res, next) {
   try {
     await reset_database(req.query.name)
-      .then((result: any) => {
-        console.log("ola"); console.log(result);res.send(result);})
+      .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
     console.log(err);

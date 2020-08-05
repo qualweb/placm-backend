@@ -49,6 +49,8 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       compatabilitiesListElem, incompatabilitiesListElem;
   let technologiesUsed: string | null = "", technologiesListElem;
   let approachListElem, approach = '000';
+  let contactsToAdd: number[] = [];
+  let params;
 
   let results: any = {
     astatements: [],
@@ -57,12 +59,13 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     tags: [],
     tagApplications: [],
     contacts: [],
+    ASContacts: [],
     failedLinks: [],
     reports: {}
   };
 
   let query: any;
-  let application: any, asSQL: any, contact: any;
+  let application: any, asSQL: any, contact: any, ASContact: any;
 
   for(let i = 0; i < statements.length; i++){
 
@@ -89,7 +92,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     } else {
       orgName = formData.org;
     }
-    orgName = readyStringToQuery(orgName);
 
     /* ---------- handle application name ---------- */
     if(formData.appName === null || formData.appName.trim() === ''){
@@ -105,7 +107,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     } else {
       name = formData.appName;
     }
-    name = readyStringToQuery(name);
 
     /* ---------- handle application url ---------- */
     if(formData.appUrl === null || formData.appUrl.trim() === ''){
@@ -119,7 +120,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     } else {
       appUrl = formData.appUrl;
     }
-    appUrl = readyUrlToQuery(appUrl);
 
     /* ---------- handle conformance state ---------- */
     stateElem = statements[i].querySelectorAll("[name=conformance-output]");
@@ -188,10 +188,10 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
 
     let linksFound = findChildrenLinks(autoEvaluations, manualEvaluations, wwwcLinks);
     for(let i = 0; i < linksFound.length; i++){
-      const document = await fetchDocument(linksFound[i]);
-      if(document){
-        earlReports.push(<string>document);
-      } else {
+      try {
+        const document = await fetchDocument(linksFound[i]);
+        earlReports.push((<any>document).result);
+      } catch(err) {
         if(!results.failedLinks.includes(linksFound[i]))
           results.failedLinks.push(linksFound[i]);
       }
@@ -361,31 +361,34 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
 
     appCountry = formData.country ? formData.country.id : null;
 
-    origin = origin === undefined ? '"unknown"' : readyStringToQuery(origin);
-    asUrl = linksRead[i] === undefined ? null : readyUrlToQuery(linksRead[i]);
+    origin = origin === undefined ? 'unknown' : origin;
+    asUrl = linksRead[i] === undefined ? null : linksRead[i];
     standard = standard === undefined ? 'unknown' : standard;
-    sealText = sealText === undefined ? null : readyStringToQuery(sealText);
-    technologiesUsed = technologiesUsed === null ? null : readyStringToQuery(technologiesUsed);
+    sealText = sealText === undefined ? null : sealText;
+    technologiesUsed = technologiesUsed === null ? null : technologiesUsed;
 
-    durResponse = durResponse === null ? null : readyStringToQuery(durResponse); 
+    durResponse = durResponse === null ? null : durResponse; 
 
     try {
-      query = `SELECT OrganizationId FROM Organization WHERE name = ${orgName};`;
-      organization = (await execute_query(serverName, query))[0];
+      query = `SELECT OrganizationId FROM Organization WHERE name = ?;`;
+      params = [orgName];
+      organization = (await execute_query(serverName, query, params))[0];
       if (!organization) {
         query = `INSERT INTO Organization (name)
-          VALUES (${orgName});`;
-          organization = await execute_query(serverName, query);
+          VALUES (?);`;
+        organization = await execute_query(serverName, query, params);
         results.organizations.push(organization.insertId);
       }
       orgId = organization.OrganizationId ? organization.OrganizationId : organization.insertId;
 
-      query = `SELECT ApplicationId FROM Application WHERE name = ${name} AND OrganizationId = ${orgId};`;
-      application = (await execute_query(serverName, query))[0];
+      query = `SELECT ApplicationId FROM Application WHERE name = ? AND OrganizationId = ?;`;
+      params = [name, orgId];
+      application = (await execute_query(serverName, query, params))[0];
       if (!application) {
         query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
-          VALUES (${name}, ${orgId}, ${formData.type}, ${formData.sector}, ${appUrl}, "${date}", ${appCountry});`;
-        application = await execute_query(serverName, query);
+          VALUES (?, ?, ?, ?, ?, ?, ?);`;
+        params = [name, orgId, formData.type, formData.sector, appUrl, date, appCountry];
+        application = await execute_query(serverName, query, params);
         results.applications.push(application.insertId);
       }
       appId = application.ApplicationId ? application.ApplicationId : application.insertId;
@@ -395,24 +398,26 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         if(typeof tag !== 'string'){
           tagName = tag.name;
         }
-        tagName = readyStringToQuery(tagName);
-        query = `SELECT TagId FROM Tag WHERE name = ${tagName};`;
-        tagSql = (await execute_query(serverName, query))[0];
+        query = `SELECT TagId FROM Tag WHERE name = ?;`;
+        params = [tagName];
+        tagSql = (await execute_query(serverName, query, params))[0];
         if(!tagSql){
           query = `INSERT INTO Tag (name)
-            VALUES (${tagName});`;
-            tagSql = await execute_query(serverName, query);
+            VALUES (?);`;
+          tagSql = await execute_query(serverName, query, params);
           results.tags.push(tagSql.insertId);
         }
         appTags.push(tagSql.TagId ? tagSql.TagId : tagSql.insertId);
       }
       for(let tId of appTags){
-        query = `SELECT * FROM TagApplication WHERE TagId = ${tId} AND ApplicationId = ${appId};`;
-        tagApp = (await execute_query(serverName, query))[0];
+        query = `SELECT * FROM TagApplication WHERE TagId = ? AND ApplicationId = ?;`;
+        params = [tId, appId];
+        tagApp = (await execute_query(serverName, query, params))[0];
         if(!tagApp){
           query = `INSERT INTO TagApplication (TagId, ApplicationId)
-          VALUES (${tId}, ${appId});`;
-          tagApp = await execute_query(serverName, query);
+            VALUES (?, ?);`;
+          params = [tId, appId];
+          tagApp = await execute_query(serverName, query, params);
           results.tagApplications.push(tagApp.insertId);
         }
       }
@@ -421,91 +426,107 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       if(asUrl === null){
         query = `SELECT ASId FROM AccessibilityStatement 
                     WHERE 
-                    Origin = ${origin} AND
-                    ApplicationId = "${appId}" AND
-                    Standard = "${standard}" AND
-                    Date = "${date}" AND
-                    State = "${state}" AND
-                    UsabilityStamp = "${sealEnum}" AND
-                    UsabilityStampText = ${sealText} AND
-                    LimitationsWithoutAltCounter = "${limitationsCounter}" AND
-                    CompatabilitiesCounter = "${compatabilitiesCounter}" AND
-                    IncompatabilitiesCounter = "${incompatabilitiesCounter}" AND
-                    TechnologiesUsed = ${technologiesUsed} AND
-                    AccessmentApproach = "${approach}";`;
+                    Origin = ? AND
+                    ApplicationId = ? AND
+                    Standard = ? AND
+                    Date = ? AND
+                    State = ? AND
+                    UsabilityStamp = ? AND
+                    UsabilityStampText = ? AND
+                    LimitationsWithoutAltCounter = ? AND
+                    CompatabilitiesCounter = ? AND
+                    IncompatabilitiesCounter = ? AND
+                    TechnologiesUsed = ? AND
+                    AccessmentApproach = ?;`;
+        params = [origin, appId, standard, date, state, sealEnum, sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
       } else {
         query = `SELECT ASId FROM AccessibilityStatement 
                     WHERE
-                    ASUrl = ${asUrl};`;
+                    ASUrl = ?;`;
+        params = [asUrl];
       }
-      asSQL = (await execute_query(serverName, query))[0];
+      asSQL = (await execute_query(serverName, query, params))[0];
       if (!asSQL) {
         query = `INSERT INTO AccessibilityStatement (Origin, ASUrl, ApplicationId, Standard, Date, State, UsabilityStamp, UsabilityStampText, 
                 LimitationsWithoutAltCounter, CompatabilitiesCounter, IncompatabilitiesCounter, TechnologiesUsed, AccessmentApproach)
-                VALUES (${origin}, ${asUrl}, "${application.insertId || application.ApplicationId}", "${standard}",
-                "${date}", "${state}", "${sealEnum}", ${sealText}, "${limitationsCounter}", "${compatabilitiesCounter}", 
-                "${incompatabilitiesCounter}", ${technologiesUsed}, "${approach}");`;
-        asSQL = await execute_query(serverName, query);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+        params = [origin, asUrl, appId, standard, date, state, sealEnum, sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
+        asSQL = await execute_query(serverName, query, params);
         results.astatements.push(asSQL.insertId);
       }
 
-      forEach(phoneNumber, (async phone => {
-        phone = readyStringToQuery(phone);
-        query = `SELECT ContactId FROM Contact WHERE type = "phone" AND contact = ${phone};`;
-        contact = (await execute_query(serverName, query))[0];
+      for(let phone of phoneNumber){
+        query = `SELECT ContactId FROM Contact WHERE type = "phone" AND contact = ?;`;
+        params = [phone];
+        contact = (await execute_query(serverName, query, params))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
-            VALUES ("phone", ${phone});`;
-            contact = await execute_query(serverName, query);
+            VALUES ("phone", ?);`;
+          contact = await execute_query(serverName, query, params);
           results.contacts.push(contact.insertId);
         }
-      }));
-      forEach(email, (async emailAddr => {
-        emailAddr = readyStringToQuery(emailAddr);
-        query = `SELECT ContactId FROM Contact WHERE type = "email" AND contact = ${emailAddr};`;
-        contact = (await execute_query(serverName, query))[0];
+        contactsToAdd.push(contact.ContactId || contact.insertId);
+      }
+      for(let emailAddr of email){
+        query = `SELECT ContactId FROM Contact WHERE type = "email" AND contact = ?;`;
+        params = [emailAddr];
+        contact = (await execute_query(serverName, query, params))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact, durationresponse)
-            VALUES ("email", ${emailAddr}, ${durResponse});`;
-            contact = await execute_query(serverName, query);
+            VALUES ("email", ?, ?);`;
+          params = [emailAddr, durResponse];
+          contact = await execute_query(serverName, query, params);
           results.contacts.push(contact.insertId);
         }
-      }));
-      forEach(visitorAddress, (async visitorAddr => {
-        visitorAddr = readyStringToQuery(visitorAddr);
-        query = `SELECT ContactId FROM Contact WHERE type = "visitorAdress" AND contact = ${visitorAddr};`;
-        contact = (await execute_query(serverName, query))[0];
+        contactsToAdd.push(contact.ContactId || contact.insertId);
+      }
+      for(let visitorAddr of visitorAddress){
+        query = `SELECT ContactId FROM Contact WHERE type = "visitorAdress" AND contact = ?;`;
+        params = [visitorAddr];
+        contact = (await execute_query(serverName, query, params))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
-            VALUES ("visitorAdress", ${visitorAddr});`;
-            contact = await execute_query(serverName, query);
+            VALUES ("visitorAdress", ?);`;
+          contact = await execute_query(serverName, query, params);
           results.contacts.push(contact.insertId);
         }
-      }));
-      forEach(postalAddress, (async postalAddr => {
-        postalAddr = readyStringToQuery(postalAddr);
-        query = `SELECT ContactId FROM Contact WHERE type = "postalAdress" AND contact = ${postalAddr};`;
-        contact = (await execute_query(serverName, query))[0];
+        contactsToAdd.push(contact.ContactId || contact.insertId);
+      }
+      for(let postalAddr of postalAddress){
+        query = `SELECT ContactId FROM Contact WHERE type = "postalAdress" AND contact = ?;`;
+        params = [postalAddr];
+        contact = (await execute_query(serverName, query, params))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact)
-            VALUES ("postalAdress", ${postalAddr});`;
-            contact = await execute_query(serverName, query);
+            VALUES ("postalAdress", ?);`;
+          contact = await execute_query(serverName, query, params);
           results.contacts.push(contact.insertId);
         }
-      }));
-      forEach(twitter, (async twitterAt => {
-        twitterAt = readyStringToQuery(twitterAt);
-        query = `SELECT ContactId FROM Contact WHERE type = "twitter" AND contact = ${twitterAt};`;
-        contact = (await execute_query(serverName, query))[0];
+        contactsToAdd.push(contact.ContactId || contact.insertId);
+      }
+      for(let twitterAt of twitter){
+        query = `SELECT ContactId FROM Contact WHERE type = "twitter" AND contact = ?;`;
+        params = [twitterAt];
+        contact = (await execute_query(serverName, query, params))[0];
         if (!contact) {
           query = `INSERT INTO Contact (type, contact, durationresponse)
-            VALUES ("twitter", ${twitterAt}, ${durResponse});`;
-            contact = await execute_query(serverName, query);
-          query = `INSERT INTO AcceStatContact (ASId, ContactId)
-            VALUES ("${asSQL.insertId || asSQL.ASId}", "${contact.insertId}");`
+            VALUES ("twitter", ?, ?);`;
+            params = [twitterAt, durResponse];
+          contact = await execute_query(serverName, query, params);
           results.contacts.push(contact.insertId);
         }
-      }));
+        contactsToAdd.push(contact.ContactId || contact.insertId);
+      }
+      for(let con of contactsToAdd){
+        query = `SELECT * FROM AcceStatContact WHERE ASId = ? AND ContactId = ?;`;
+        params = [(asSQL.insertId || asSQL.ASId), con];
+        ASContact = (await execute_query(serverName, query, params))[0];
+        if (!ASContact) {
+          query = `INSERT INTO AcceStatContact (ASId, ContactId) VALUES (?, ?);`
+          ASContact = await execute_query(serverName, query, params);
+          results.ASContacts.push(ASContact.insertId);
+        }
+      }
       results.reports = (await add_earl_report(serverName, formData, ...earlReports)).result;
     } catch (err){
       console.log(err);
@@ -524,14 +545,16 @@ function findChildrenLinks(...evaluations: NodeListOf<Element>[]): string[] {
       if(element.tagName === 'a'){
         href = element.getAttribute('href');
         if(href && /^https?:\/\/.*\.json$/.test(href)){
-          earlReportsLinks.push(href);
+          if(!earlReportsLinks.includes(href))
+            earlReportsLinks.push(href);
         }
       } else {
         aElements = element.querySelectorAll('a');
         forEach(aElements, (a => {
           href = a.getAttribute('href');
           if(href && /^https?:\/\/.*\.json$/.test(href)){
-            earlReportsLinks.push(href);
+            if(!earlReportsLinks.includes(href))
+              earlReportsLinks.push(href);
           }
         }));
       }
