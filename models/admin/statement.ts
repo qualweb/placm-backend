@@ -5,7 +5,7 @@ import { twitterRegex, emailRegex, telephoneRegex } from "../../lib/constants";
 import { setCharAt, readyStringToQuery, readyUrlToQuery, regulateStringLength } from "../../lib/util";
 import { execute_query } from "../../lib/database";
 import { error, success } from "../../lib/responses";
-import { response } from "express";
+import { fetchDocument } from "./proto";
 
 const fetch = require("node-fetch");
 
@@ -106,9 +106,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       name = formData.appName;
     }
     name = readyStringToQuery(name);
-    console.log(name);
-    console.log(origin);
-
 
     /* ---------- handle application url ---------- */
     if(formData.appUrl === null || formData.appUrl.trim() === ''){
@@ -123,7 +120,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       appUrl = formData.appUrl;
     }
     appUrl = readyUrlToQuery(appUrl);
-    console.log(appUrl);
 
     /* ---------- handle conformance state ---------- */
     stateElem = statements[i].querySelectorAll("[name=conformance-output]");
@@ -163,7 +159,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         date = dateElem[0].text;
       }
     }
-    console.log(date);
     
 
     /* ---------- handle standard ---------- */
@@ -192,25 +187,16 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     wwwcLinks = statements[i].querySelectorAll(".technical-information.related-evidence");
 
     let linksFound = findChildrenLinks(autoEvaluations, manualEvaluations, wwwcLinks);
-    console.log(linksFound);
     for(let i = 0; i < linksFound.length; i++){
-      let fetchedText = await fetch(linksFound[i])
-            .then(function(res: any) {
-              if(!res.ok){
-                throw Error(res);
-              }
-              return res;
-            })
-            .catch(function(err: any) {
-              if(!results.failedLinks.includes(linksFound[i]))
-                results.failedLinks.push(linksFound[i]);
-              return null;
-            });
-      if(fetchedText){
-        earlReports.push(fetchedText.text());
+      const document = await fetchDocument(linksFound[i]);
+      if(document){
+        earlReports.push(<string>document);
+      } else {
+        if(!results.failedLinks.includes(linksFound[i]))
+          results.failedLinks.push(linksFound[i]);
       }
     }
-
+    
     /* ---------- handle accessibility seal ---------- */
     sealElem = statements[i].querySelectorAll(".mr.mr-seal");
     if(sealElem.length){
@@ -366,8 +352,13 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         }
       };
     }
+    
+    if(date === undefined || isNaN((new Date(date)).valueOf())){
+      date = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      date = new Date(date).toISOString().slice(0, 19).replace('T', ' ');
+    }
 
-    date = date === undefined ? new Date().toISOString().slice(0, 19).replace('T', ' ') : new Date(date).toISOString().slice(0, 19).replace('T', ' ');
     appCountry = formData.country ? formData.country.id : null;
 
     origin = origin === undefined ? '"unknown"' : readyStringToQuery(origin);
@@ -425,7 +416,6 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
           results.tagApplications.push(tagApp.insertId);
         }
       }
-      console.log(results);
 
       // todo fix from:file
       if(asUrl === null){

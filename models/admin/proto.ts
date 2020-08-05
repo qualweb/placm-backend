@@ -11,10 +11,25 @@ const excelToJson = require('convert-excel-to-json');
 let Crawler = require('simplecrawler');
 
 const fetch = require("node-fetch");
-
 const c = require('ansi-colors');
-
 const randomWords = require('random-words');
+
+const http = require('http');
+const https = require('https');
+
+const get_link = async (urlReq: string) => {
+  const queryObject = new URL(urlReq);
+  if (queryObject.href) {
+      const document = await fetchDocument(queryObject.href);
+      if(document){
+        return success(document);
+      } else {
+        return error({code: -1, message: 'ERROR_FETCH', err: 'Encountered an error while fetching a document'}, queryObject.href);
+      }
+  } else {
+    return error({code: -2, message: 'NO_URL', err: 'No URL was given to fetch'}, queryObject.href);
+  }
+};
 
 const reset_database = async (serverName: string) => {
   let query;
@@ -166,7 +181,7 @@ const prepare_database = () => {
       for (let s of <any> Object.values(g['successcriteria'])){
         let initialUrl = 'https://www.w3.org/WAI/WCAG21/Understanding/';
         //todo fix this
-        let preparingUrl = s['handle'].replace(/\(\)/g,'').replace(' ','-').toLowerCase();
+        let preparingUrl = s['handle'].replace(/\(/g,'').replace(/\)/g,'').replace(/\,/g,'').replace(/ /g,'-').toLowerCase();
         let url = initialUrl + preparingUrl;
         query = `INSERT INTO SuccessCriteria (SCId, Name, Principle, Level, Url) VALUES ("${s.num}", "${s.handle}", "${p.handle}", "${s.level}", "${url}");`;
         console.log(query);
@@ -255,21 +270,6 @@ const add_filedata = async (serverName: string) => {
             result.evaluationTools.push(evalTool.insertId);
           };
           break;
-        /*case 'Rule':
-          query = `SELECT RuleId FROM Rule WHERE name = "${entry['name']}";`;
-          rule = (await execute_query(serverName, query))[0];
-          if (!rule) {
-            if(entry['data1'] === ''){
-              url = null;
-            } else {
-              url = '"'.concat(entry['data1'],'"');
-            }
-            query = `INSERT INTO Rule (name, url, description)
-                VALUES ("${entry['name']}", ${url}, "${entry['data2']}");`;
-            rule = await execute_query(serverName, query);
-            result.rules.push(rule.insertId);
-          };
-          break;*/
         default:
           break;
     }
@@ -399,15 +399,6 @@ const add_countries = async (serverName: string) => {
         country = await execute_query(serverName, query);
         result.countries.push(c.country);   
       }
-      /*if(c.continent){
-        if(!result.continents.includes(c.continent)){
-          query = `INSERT INTO Continent (name) VALUES ("${c.continent}");`;
-          console.log(query);
-          result.continents.push(c.continent);
-        }
-        query = `INSERT INTO Country (name, continentId) VALUES ("${c.country}", "${result.continents.indexOf(c.continent)}");`;
-        console.log(query);
-      }*/
     }
   } catch (err) {
     console.log(err);
@@ -825,4 +816,25 @@ function randomString(len: number, an?: string) {
   return str;
 }
 
-export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, prepare_database, group_elems, update_rules_table_element_type };
+function fetchDocument(url: any) {
+  return new Promise((resolve, reject) => {
+      let client = http;
+      if (url.toString().indexOf("https") === 0) {
+          client = https;
+      }
+      client.get(url, (resp: any) => {
+          let data = '';
+          resp.on('data', (chunk: any) => {
+              data += chunk;
+          });
+          resp.on('end', () => {
+              resolve(data);
+          });
+      }).on("error", (err: any) => {
+          console.log("Cannot read accessibility statement from", url);
+          reject(err);
+      });
+  });
+}
+
+export { reset_database, add_filedata, add_countries, correct_urls_files_json, add_as_from_links_excel, prepare_database, group_elems, update_rules_table_element_type, get_link, fetchDocument };
