@@ -99,10 +99,18 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
         ruleUrl = assertion.test["@id"];
         ruleDesc = Array.isArray(assertion.test["earl:description"]) ?
             assertion.test["earl:description"][1] : assertion.test["earl:description"];
-        ruleMapping = ruleUrl.split('/')[-1];
 
-        query = `SELECT RuleId FROM Rule WHERE url = ?;`;
-        params = [ruleUrl];
+        let array;
+        if(ruleUrl.endsWith('.md')){
+          array = ruleUrl.split('-');
+          ruleMapping = array[array.length - 1].substring(0,6);
+        } else {
+          array = ruleUrl.split('/');
+          ruleMapping = array[array.length - 1];
+        }
+
+        query = `SELECT RuleId FROM Rule WHERE mapping = ?;`;
+        params = [ruleMapping];
         rule = (await execute_query(serverName, query, params))[0];
         if (!rule) {
           query = `INSERT INTO Rule (name, mapping, url, description)
