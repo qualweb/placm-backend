@@ -7,8 +7,6 @@ import { execute_query } from "../../lib/database";
 import { error, success } from "../../lib/responses";
 import { fetchDocument } from "./proto";
 
-const fetch = require("node-fetch");
-
 const add_accessibility_statement = async (serverName: string, numLinks: number, formData: any, ...linksAndTexts: string[]) => {
 
   let statements: any[] = [];
@@ -53,7 +51,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
   let params;
 
   let results: any = {
-    astatements: [],
+    statements: [],
     applications: [],
     organizations: [],
     tags: [],
@@ -416,9 +414,8 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         if(!tagApp){
           query = `INSERT INTO TagApplication (TagId, ApplicationId)
             VALUES (?, ?);`;
-          params = [tId, appId];
           tagApp = await execute_query(serverName, query, params);
-          results.tagApplications.push(tagApp.insertId);
+          results.tagApplications.push([tId, appId]);
         }
       }
 
@@ -438,7 +435,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
                     IncompatabilitiesCounter = ? AND
                     TechnologiesUsed = ? AND
                     AccessmentApproach = ?;`;
-        params = [origin, appId, standard, date, state, sealEnum, sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
+        params = [origin, appId, standard, date, state.toString(), sealEnum.toString(), sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
       } else {
         query = `SELECT ASId FROM AccessibilityStatement 
                     WHERE
@@ -450,9 +447,9 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         query = `INSERT INTO AccessibilityStatement (Origin, ASUrl, ApplicationId, Standard, Date, State, UsabilityStamp, UsabilityStampText, 
                 LimitationsWithoutAltCounter, CompatabilitiesCounter, IncompatabilitiesCounter, TechnologiesUsed, AccessmentApproach)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
-        params = [origin, asUrl, appId, standard, date, state, sealEnum, sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
+        params = [origin, asUrl, appId, standard, date, state.toString(), sealEnum.toString(), sealText, limitationsCounter, compatabilitiesCounter, incompatabilitiesCounter, technologiesUsed, approach];
         asSQL = await execute_query(serverName, query, params);
-        results.astatements.push(asSQL.insertId);
+        results.statements.push(asSQL.insertId);
       }
 
       for(let phone of phoneNumber){
@@ -524,7 +521,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         if (!ASContact) {
           query = `INSERT INTO AcceStatContact (ASId, ContactId) VALUES (?, ?);`
           ASContact = await execute_query(serverName, query, params);
-          results.ASContacts.push(ASContact.insertId);
+          results.ASContacts.push([(asSQL.insertId || asSQL.ASId), con]);
         }
       }
       results.reports = (await add_earl_report(serverName, formData, ...earlReports)).result;

@@ -30,14 +30,14 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
   }
 
   let result: any = {
-    evaluationTool: [],
-    rule: [],
-    organization: [],
-    application: [],
-    tag: [],
-    tagApplication: [],
-    page: [],
-    assertion: []
+    evaluationTools: [],
+    rules: [],
+    organizations: [],
+    applications: [],
+    tags: [],
+    tagApplications: [],
+    pages: [],
+    assertions: []
   };
 
   let index = 0;
@@ -90,7 +90,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
             VALUES (?, ?, ?, ?);`;
           params = [toolName, toolUrl, toolDesc, toolVersion];
           evaluationTool = await execute_query(serverName, query, params);
-          result.evaluationTool.push(evaluationTool.insertId);
+          result.evaluationTools.push(evaluationTool.insertId);
         }
 
         /* ---------- handle rule ---------- */
@@ -109,7 +109,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
             VALUES (?, ?, ?, ?);`;
           params = [ruleName, ruleMapping, ruleUrl, ruleDesc];
           rule = await execute_query(serverName, query, params);
-          result.rule.push(rule.insertId);
+          result.rules.push(rule.insertId);
         }
 
         /* ---------- handle organization ---------- */
@@ -122,7 +122,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
           query = `INSERT INTO Organization (name)
             VALUES (?);`;
           org = await execute_query(serverName, query, params);
-          result.organization.push(org.insertId);
+          result.organizations.push(org.insertId);
         }
         orgId = org.OrganizationId ? org.OrganizationId : org.insertId;
 
@@ -142,7 +142,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
           query = `INSERT INTO Application (name, url, creationdate)
             VALUES ("${websiteName}", "${websiteUrl}", "${assertionDate}");`;
           website = await execute_query(serverName, query);
-          result.application.push(website.insertId);
+          result.applications.push(website.insertId);
         }*/
         /***                                                                  ***/
         websiteUrl = formData.appUrl ? formData.appUrl : null;
@@ -156,7 +156,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
             VALUES (?, ?, ?, ?, ?, ?, ?);`;
           params = [websiteName, orgId, formData.type, formData.sector, websiteUrl, assertionDate, websiteCountry];
           website = await execute_query(serverName, query, params);
-          result.application.push(website.insertId);
+          result.applications.push(website.insertId);
         }
         websiteId = website.ApplicationId ? website.ApplicationId : website.insertId;
 
@@ -175,7 +175,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
               VALUES (?);`;
               tagSql = await execute_query(serverName, query, params);
             params = [ruleName, ruleUrl, ruleDesc];
-            result.tag.push(tagSql.insertId);
+            result.tags.push(tagSql.insertId);
           }
           websiteTags.push(tagSql.TagId ? tagSql.TagId : tagSql.insertId);
         }
@@ -188,7 +188,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
               VALUES (?, ?);`;
             params = [tId, websiteId];
             tagApp = await execute_query(serverName, query, params);
-            result.tagApplication.push(tagApp.insertId);
+            result.tagApplications.push(tagApp.insertId);
           }
         }
 
@@ -204,7 +204,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
             VALUES (?, ?, ?);`;
           params = [pageUrl, assertionDate, (website.insertId || website.ApplicationId)];
           page = await execute_query(serverName, query, params);
-          result.page.push(page.insertId);
+          result.pages.push(page.insertId);
         }
 
         /* ---------- handle assertion ---------- */
@@ -230,7 +230,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
           query = `INSERT INTO Assertion (EvaluationToolId, RuleId, PageId, Mode, Date, Description, Outcome)
                   VALUES (?, ?, ?, ?, ?, ?, ?);`;
           assertionSQL = await execute_query(serverName, query, params);
-          result.assertion.push(assertionSQL.insertId);
+          result.assertions.push(assertionSQL.insertId);
         }
       }
     }
