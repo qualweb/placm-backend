@@ -52,6 +52,11 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
         urlTested = trim(assertion.subject["source"]);
         urlRegexMatch = urlTested.match(urlRegex);
         assertionDate = assertion.result["earl:date"];
+        if(assertionDate === undefined || isNaN((new Date(assertionDate)).valueOf())){
+          assertionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        } else {
+          assertionDate = new Date(assertionDate).toISOString().slice(0, 19).replace('T', ' ');
+        }
 
         /* ---------- handle assertor ---------- */
         
