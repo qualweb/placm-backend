@@ -35,6 +35,7 @@ const reset_database = async (serverName: string) => {
   let query;
   const dbName: string = DB_NAMES[serverName];
   try {
+    await execute_query(serverName, 'SET autocommit = 0; START TRANSACTION;');
     // get all table names except those 5
     query = `SELECT 
     CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS truncateCommand
@@ -49,12 +50,14 @@ const reset_database = async (serverName: string) => {
       query = query + trunc.truncateCommand + '\n';
     }
     query = query + `\nSET FOREIGN_KEY_CHECKS=1;`;
-    await execute_query(serverName, query, [dbName], true);
+    await execute_query(serverName, query, [dbName]);
 
   } catch (err){
     console.log(err);
+    await execute_query(serverName, 'ROLLBACK;');
     return error(err);
   }
+  await execute_query(serverName, 'COMMIT;');
   return success(true);
 }
 

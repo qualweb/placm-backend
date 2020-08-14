@@ -554,7 +554,7 @@ const get_data_filtered_sc = async (tableName: string, serverName: string, filte
   ORDER BY 2;`;
 
   try {
-    let result = (await execute_query(serverName, query, params, true));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);
@@ -644,7 +644,7 @@ const get_all_sc_data_app = async(serverName: string, filters: any) => {
       FROM workingTable
     ORDER BY 1;`;
     
-    let result = (await execute_query(serverName, query, [appId], true));
+    let result = (await execute_query(serverName, query, [appId]));
     return success(result);
   } catch(err){
     return error(err);

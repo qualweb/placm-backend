@@ -1,8 +1,9 @@
 //const { DbError } = require("./_error");
-import {createConnection, Connection} from 'mysql';
-import {DB_CONFIG_PROTO, DB_CONFIG_PROTO_PT} from './constants';
+import {createConnection, Pool} from 'mysql';
+import {DB_CONFIG_PROTO} from './constants';
+import { poolPT, pool as poolDefault } from '..';
 
-function execute_query(serverName: string, query: any, queryParams: any[] = [], multipleStats: boolean = false): Promise<any> {
+function execute_query(serverName: string, query: any, queryParams: any[] = []): Promise<any> {
   return new Promise(async (resolve, reject) => {
 
     /*let session;
@@ -19,6 +20,7 @@ function execute_query(serverName: string, query: any, queryParams: any[] = [], 
       session && session.close();
     }*/
 
+    /* ************************************************************
     let connection: Connection;
     switch(serverName) {
       case 'pt':
@@ -32,17 +34,67 @@ function execute_query(serverName: string, query: any, queryParams: any[] = [], 
     }
 
     connection.connect();
+    connection.beginTransaction((beginTranError: MysqlError) => {
+      if (beginTranError) {
+        //connection.end();
+        reject(new Error(beginTranError.message));
+      }
 
-    connection.query(query, queryParams, (err: any, res: unknown) => {
-      connection.end();
-      if (err) {
+      connection.query(query, queryParams, (err: MysqlError | null, res: any) => {
+        if (err) {
+          console.log(err);
+          connection.rollback((rollbackError: MysqlError) => {
+            if(rollbackError) {
+              reject(new Error(rollbackError.message));
+            } else {
+              reject(new Error(err.message));
+            }
+          });
+        } else {
+          connection.commit((commitError: MysqlError) => {
+            if (commitError) {
+              connection.rollback((rollbackError: MysqlError) => {
+                if(rollbackError) {
+                  reject(new Error(rollbackError.message));
+                } else {
+                  reject(new Error(commitError.message));
+                }
+              });
+            }
+            connection.end();
+            resolve(res);
+          });
+        }
+      });
+    });************************************************************/
+
+    let usingPool: Pool;
+    switch(serverName) {
+      case 'pt':
+        usingPool = poolPT;
+        break;
+      default:
+        usingPool = poolDefault;
+        break;
+    }
+
+    usingPool.getConnection(function(err, connection) {
+      if(err){
         console.log(err);
         reject(new Error(err.message));
       } else {
-        resolve(res);
+        connection.query(query, queryParams, (err: any, res: unknown) => {
+          connection.release();
+          if (err) {
+            console.log(err);
+            reject(new Error(err.message));
+          } else {
+            resolve(res);
+          }
+        });
       }
     });
-  });
+  }); 
 }
 
 function execute_query_proto(query: any): Promise<any> {

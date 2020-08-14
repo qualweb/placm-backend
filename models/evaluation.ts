@@ -412,7 +412,7 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
   ORDER BY 2;`;
 
   try {
-    let result = (await execute_query(serverName, query, params, true));
+    let result = (await execute_query(serverName, query, params));
     return success(result);
   } catch(err){
     return error(err);

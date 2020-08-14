@@ -368,6 +368,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     durResponse = durResponse === null ? null : durResponse; 
 
     try {
+      await execute_query(serverName, 'SET autocommit = 0; START TRANSACTION;');
       query = `SELECT OrganizationId FROM Organization WHERE name = ?;`;
       params = [orgName];
       organization = (await execute_query(serverName, query, params))[0];
@@ -527,9 +528,11 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       results.reports = (await add_earl_report(serverName, formData, ...earlReports)).result;
     } catch (err){
       console.log(err);
+      await execute_query(serverName, 'ROLLBACK;');
       throw error(err);
     }
   }
+  await execute_query(serverName, 'COMMIT;');
   return success(results);
 }
 

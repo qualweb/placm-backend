@@ -56,6 +56,18 @@
 		"automatic": {
 			"@id": "earl:automatic"
 		},
+		"manual": {
+			"@id": "earl:manual"
+		},
+		"semiAuto": {
+			"@id": "earl:semiAuto"
+		},
+		"undisclosed": {
+			"@id": "earl:undisclosed"
+		},
+		"unknown": {
+			"@id": "earl:unknownMode"
+		},
 		"info": {
 			"@id": "earl:info"
 		},

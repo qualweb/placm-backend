@@ -42,6 +42,7 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
 
   let index = 0;
   try {
+    await execute_query(serverName, 'SET autocommit = 0; START TRANSACTION;');
     for (let assertion of assertions) {
       if(assertion){
         //console.log(index);
@@ -249,8 +250,10 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
     }
   } catch (err) {
     console.log(err);
+    await execute_query(serverName, 'ROLLBACK;');
     throw error(err);
   }
+  await execute_query(serverName, 'COMMIT;');
   return success(result);
 };
 
