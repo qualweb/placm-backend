@@ -1,85 +1,7 @@
 import express from "express";
-import { get_data_filtered, get_data_filtered_sc, get_all_sc_data_app } from "../models/application";
+import { get_data, get_data_sc, get_data_compare, get_data_sc_compare, get_all_sc_data_app } from "../models/application";
 
 const router = express.Router();
-
-router.get('/appData', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered('app', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
-
-router.get('/sectorData', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered('sector', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
-
-router.get('/orgData', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered('org', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
-
-router.get('/appDataSC', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered_sc('app', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
-
-router.get('/sectorDataSC', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered_sc('sector', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
-
-router.get('/orgDataSC', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    await get_data_filtered_sc('org', serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
 
 router.get('/scApp', async function (req, res, next) {
   try {
@@ -95,5 +17,160 @@ router.get('/scApp', async function (req, res, next) {
   }
 });
 
+router.get('/appData', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data('app', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/sectorData', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data('sector', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/orgData', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data('org', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/appDataSC', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc('app', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/sectorDataSC', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc('sector', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/orgDataSC', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc('org', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/appDataCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_compare('app', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/sectorDataCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_compare('sector', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/orgDataCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_compare('org', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/appDataSCCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc_compare('app', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/sectorDataSCCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc_compare('sector', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/orgDataSCCompare', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    await get_data_sc_compare('org', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
 
 export = router;

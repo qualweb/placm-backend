@@ -40,7 +40,7 @@ const reset_database = async (serverName: string) => {
     query = `SELECT 
     CONCAT('TRUNCATE TABLE ',TABLE_NAME,';') AS truncateCommand
     FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = ? AND TABLE_NAME NOT IN ("Country", "Continent", "Rule", "SuccessCriteria", "RuleSuccessCriteria");
+    WHERE TABLE_SCHEMA = ? AND TABLE_NAME NOT IN ("Country", "Continent", "Rule", "SuccessCriteria", "RuleSuccessCriteria", "ElementType", "RuleElementType");
     `;
     let truncates = await execute_query(serverName, query, [dbName]);
 
@@ -241,9 +241,9 @@ const add_filedata = async (serverName: string) => {
 
   let query, entries: string[], data: string[];
   let tag, evalTool, rule, app, page, assertion, tagapp, url;
-  const numberApps = 15;
-  const numberPages = 10;
-  const numberTools = 5;
+  const numberApps = 20;
+  const numberPages = 50; //[0-50]+200 (random)
+  const numberAssertions = 5;
   // todo arranjar numberTools para ir buscar atraves de um select
 
   for(let entry of Object.values(PROTODATA_JSON)){
@@ -313,7 +313,7 @@ const add_filedata = async (serverName: string) => {
         query = `INSERT INTO Organization (name)
           VALUES ("${organizationName}");`;
           organization = await execute_query(serverName, query);
-        result.organizations.push(organizationName);         
+        result.organizations.push(organizationName);
       }
       query = `INSERT INTO Application (name, organizationid, type, sector, url, creationdate, countryid)
           VALUES ("${appName}", "${organization.OrganizationId ? organization.OrganizationId : organization.insertId}", "0", "${Math.floor(Math.random()*2)}", "${appUrl}", "${appDate}", "${Math.floor(Math.random()*243)+1}");`;
@@ -339,7 +339,7 @@ const add_filedata = async (serverName: string) => {
 
     // Page
     //for(let j = 0; j < numberPages; j++) {
-    for(let j = 0; j < Math.floor(Math.random()*numberPages)+1; j++) {
+    for(let j = 0; j < Math.floor(Math.random()*numberPages)+200; j++) {
       pageUrl = appUrl + '/' + randomString(10);
       query = `SELECT PageId FROM Page WHERE url = "${pageUrl}";`;
       page = (await execute_query(serverName, query))[0];
@@ -352,7 +352,7 @@ const add_filedata = async (serverName: string) => {
       pageId = page.insertId || page.PageId;
 
       // Assertion
-      for(let r = 1; r <= numberTools; r++) {
+      for(let r = 1; r <= numberAssertions; r++) {
         let ruleId = Math.floor(Math.random() * 66) + 1;
         assertionDesc = randomString(15,'a');
         assertionOutcome = outcomes[Math.floor(Math.random()*5)];

@@ -36,7 +36,7 @@ const get_all_data = async () => {
   }
 }
 
-const get_data_rule_filtered = async (serverName: string, filters: any) => {
+const get_data_rule = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
   let filtered, splitted;
@@ -428,4 +428,508 @@ const get_data_element_type = async (serverName: string, filters: any) => {
   }
 }
 
-export {get_all_data, get_data_rule_filtered, get_data_element_type};
+const get_data_rule_compare = async (serverName: string, filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let groupByParams = [];
+  let groupByParam;
+  if(filters !== {}){
+    groupByParam = Object.keys(filters)[0];
+    if(!groupByParam.includes('rule'))
+      groupByParams.push(groupByParam.substring(0, groupByParam.length - 1));
+  }
+  groupByParams.push('name');
+  let params = [];
+  let filtered, splitted;
+  let query = 
+  `SELECT r.Name as name,
+    r.RuleId as id,
+    COUNT(DISTINCT p.PageId) as nPages,
+    COUNT(DISTINCT a.AssertionId) as nAssertions,
+    COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
+    COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
+    COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
+    COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
+    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+
+  if(filters.continentIds){
+    query = query + `,
+    cont.ContinentId as continentId,
+    cont.Name as continentName`;
+  }
+
+  if(filters.countryIds){
+    query = query + `,
+    c.CountryId as countryId,
+    c.Name as countryName`;
+  }
+
+  if(filters.tagIds){
+    query = query + `,
+    t.TagId as tagId,
+    t.Name as tagName`;
+  }
+
+  if(filters.orgIds){
+    query = query + `,
+    org.OrganizationId as orgId,
+    org.Name as orgName`;
+  }
+
+  if(filters.sectorIds){
+    query = query + `,
+    app.Sector as sectorId,
+    IF(app.Sector = '0', 'Public', 'Private') as sectorName`;
+  }
+
+  if(filters.appIds){
+    query = query + `,
+    app.ApplicationId as appId,
+    app.Name as appName`;
+  }
+  
+  if(filters.evalIds){
+    params.push(filters.evalIds.split(','));
+    query = query + `,
+    a.EvaluationToolId as evalId,
+    (SELECT eval.Name FROM EvaluationTool eval WHERE a.EvaluationToolId IN (?) AND eval.EvaluationToolId = a.EvaluationToolId) as evalName`;
+  }
+
+  if(filters.typeIds){
+    query = query + `,
+    et.TypeId as typeId,
+    et.Name as typeName`;
+  }
+
+  if(filters.scIds){
+    query = query + `,
+    sc.SCId as scId,
+    sc.Name as scName`;
+  }
+    
+  query = query + `
+  FROM
+    Application app
+  INNER JOIN
+    Rule r`;
+
+  if(filters.orgIds){
+    query = query + `
+    INNER JOIN
+      Organization org
+        ON org.OrganizationId = app.OrganizationId`;
+  }
+
+  if(filters.typeIds){
+    query = query + `
+    INNER JOIN
+      RuleElementType ret
+        ON ret.RuleId = r.RuleId
+    INNER JOIN
+      ElementType et
+        ON et.TypeId = ret.TypeId`;
+  }
+
+  if(filters.scIds){
+    query = query + `
+    LEFT JOIN
+      RuleSuccessCriteria rsc
+        ON rsc.RuleId = r.RuleId
+    LEFT JOIN
+      SuccessCriteria sc
+        ON sc.SCId = rsc.SCId`;
+  }
+
+  if(filters.tagIds){
+    query = query + `
+    LEFT JOIN
+      TagApplication ta
+        ON ta.ApplicationId = app.ApplicationId`;
+  }
+
+  if(filters.continentIds || filters.countryIds){
+    query = query + `
+    LEFT JOIN
+      Country c
+        ON c.CountryId = app.CountryId`;
+    if(filters.continentIds) {
+      query = query + `
+      LEFT JOIN
+        Continent cont
+          ON cont.ContinentId = c.ContinentId`;
+    }
+  }
+
+  query = query + `
+  INNER JOIN
+    Page p
+      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+  INNER JOIN
+  (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
+    FROM
+      Assertion a
+    WHERE
+      date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+      AND a.Deleted = '0'
+    ORDER BY date DESC) a
+      ON a.PageId = p.PageId
+      AND a.RuleId = r.RuleId
+  WHERE app.Deleted = '0'`;
+
+  if(filters.continentIds){
+    splitted = filters.continentIds.split(',');
+    if(filters.continentIds === '0'){
+      query = query + `
+      AND c.ContinentId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (c.ContinentId is null OR c.ContinentId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND c.ContinentId IN (?)`;
+    }
+  }
+
+  if(filters.countryIds){
+    splitted = filters.countryIds.split(',');
+    if(filters.countryIds === '0'){
+      query = query + `
+      AND app.CountryId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (app.CountryId is null OR app.CountryId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND app.CountryId IN (?)`;
+    }
+  }
+
+  if(filters.tagIds){
+    splitted = filters.tagIds.split(',');
+    if(filters.tagIds === '0'){
+      query = query + `
+      AND ta.TagId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (ta.TagId is null OR ta.TagId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND ta.TagId IN (?)`;
+    }
+  }
+
+  if(filters.appIds){
+    params.push(filters.appIds.split(','));
+    query = query + `
+    AND app.ApplicationId IN (?)`;
+  }
+
+  if(filters.sectorIds){
+    params.push(filters.sectorIds.split(','));
+    query = query + `
+    AND app.Sector IN (?)`;
+  }
+
+  if(filters.orgIds){
+    params.push(filters.orgIds.split(','));
+    query = query + `
+    AND app.OrganizationId IN (?)`;
+  }
+
+  if(filters.evalIds){
+    params.push(filters.evalIds.split(','));
+    query = query + `
+    AND a.EvaluationToolId IN (?)`;
+  }
+
+  if(filters.typeIds){
+    params.push(filters.typeIds.split(','));
+    query = query + `
+    AND ret.TypeId IN (?)`;
+  }
+  
+  if(filters.scIds) {
+    params.push(filters.scIds.split(','));
+    query = query + `
+    AND sc.SCId IN (?)`;
+  }
+  
+  if(filters.ruleIds){
+    params.push(filters.ruleIds.split(','));
+    query = query + `
+    AND a.RuleId IN (?)`;
+  }
+
+  query = query + `
+  GROUP BY ` + groupByParams.join(',') + `;`;
+
+  try {
+    let result = (await execute_query(serverName, query, params));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+const get_data_element_type_compare = async (serverName: string, filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let groupByParams = [];
+  let groupByParam;
+  if(filters !== {}){
+    groupByParam = Object.keys(filters)[0];
+    if(!groupByParam.includes('type'))
+      groupByParams.push(groupByParam.substring(0, groupByParam.length - 1));
+  }
+  groupByParams.push('name');
+  let params = [];
+  let filtered, splitted;
+  let query = 
+  `SELECT et.Name as name,
+    et.TypeId as id,
+    COUNT(DISTINCT p.PageId) as nPages,
+    COUNT(DISTINCT a.AssertionId) as nAssertions,
+    COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
+    COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
+    COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
+    COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
+    COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
+
+  if(filters.continentIds){
+    query = query + `,
+    cont.ContinentId as continentId,
+    cont.Name as continentName`;
+  }
+
+  if(filters.countryIds){
+    query = query + `,
+    c.CountryId as countryId,
+    c.Name as countryName`;
+  }
+
+  if(filters.tagIds){
+    query = query + `,
+    t.TagId as tagId,
+    t.Name as tagName`;
+  }
+
+  if(filters.orgIds){
+    query = query + `,
+    org.OrganizationId as orgId,
+    org.Name as orgName`;
+  }
+
+  if(filters.sectorIds){
+    query = query + `,
+    app.Sector as sectorId,
+    IF(app.Sector = '0', 'Public', 'Private') as sectorName`;
+  }
+
+  if(filters.appIds){
+    query = query + `,
+    app.ApplicationId as appId,
+    app.Name as appName`;
+  }
+  
+  if(filters.evalIds){
+    params.push(filters.evalIds.split(','));
+    query = query + `,
+    a.EvaluationToolId as evalId,
+    (SELECT eval.Name FROM EvaluationTool eval WHERE a.EvaluationToolId IN (?) AND eval.EvaluationToolId = a.EvaluationToolId) as evalName`;
+  }
+
+  if(filters.scIds){
+    query = query + `,
+    sc.SCId as scId,
+    sc.Name as scName`;
+  }
+  
+  query = query + `
+  FROM
+    Application app
+  INNER JOIN
+    Rule r
+  INNER JOIN
+    RuleElementType ret
+      ON ret.RuleId = r.RuleId
+  INNER JOIN
+    ElementType et
+      ON et.TypeId = ret.TypeId`;
+
+  if(filters.orgIds){
+    query = query + `
+    INNER JOIN
+      Organization org
+        ON org.OrganizationId = app.OrganizationId`;
+  }
+
+  if(filters.scIds){
+    query = query + `
+    LEFT JOIN
+      RuleSuccessCriteria rsc
+        ON rsc.RuleId = r.RuleId
+    LEFT JOIN
+      SuccessCriteria sc
+        ON sc.SCId = rsc.SCId`;
+  }
+
+  if(filters.tagIds){
+    query = query + `
+    LEFT JOIN
+      TagApplication ta
+        ON ta.ApplicationId = app.ApplicationId`;
+  }
+
+  if(filters.continentIds || filters.countryIds){
+    query = query + `
+    LEFT JOIN
+      Country c
+        ON c.CountryId = app.CountryId`;
+    if(filters.continentIds) {
+      query = query + `
+      LEFT JOIN
+        Continent cont
+          ON cont.ContinentId = c.ContinentId`;
+    }
+  }
+
+  query = query + `
+  INNER JOIN
+    Page p
+      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+  INNER JOIN
+  (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
+    FROM
+      Assertion a
+    WHERE
+      date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
+      AND a.Deleted = '0'
+    ORDER BY date DESC) a
+      ON a.PageId = p.PageId
+      AND a.RuleId = r.RuleId
+  WHERE app.Deleted = '0'`;
+
+  if(filters.continentIds){
+    splitted = filters.continentIds.split(',');
+    if(filters.continentIds === '0'){
+      query = query + `
+      AND c.ContinentId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (c.ContinentId is null OR c.ContinentId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND c.ContinentId IN (?)`;
+    }
+  }
+
+  if(filters.countryIds){
+    splitted = filters.countryIds.split(',');
+    if(filters.countryIds === '0'){
+      query = query + `
+      AND app.CountryId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (app.CountryId is null OR app.CountryId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND app.CountryId IN (?)`;
+    }
+  }
+
+  if(filters.tagIds){
+    splitted = filters.tagIds.split(',');
+    if(filters.tagIds === '0'){
+      query = query + `
+      AND ta.TagId is null`;
+    } else if (splitted.includes('0')) {
+
+      // removing unspecified from filters
+      filtered = splitted.filter(function(v: string, i: any, arr: any){return v !== '0';});
+      params.push(filtered);
+      
+      query = query + `
+      AND (ta.TagId is null OR ta.TagId IN (?))`;
+    } else {
+      params.push(splitted);
+      query = query + `
+      AND ta.TagId IN (?)`;
+    }
+  }
+
+  if(filters.appIds){
+    params.push(filters.appIds.split(','));
+    query = query + `
+    AND app.ApplicationId IN (?)`;
+  }
+  
+  if(filters.sectorIds){
+    params.push(filters.sectorIds.split(','));
+    query = query + `
+    AND app.Sector IN (?)`;
+  }
+
+  if(filters.orgIds){
+    params.push(filters.orgIds.split(','));
+    query = query + `
+    AND app.OrganizationId IN (?)`;
+  }
+
+  if(filters.evalIds){
+    params.push(filters.evalIds.split(','));
+    query = query + `
+    AND a.EvaluationToolId IN (?)`;
+  }
+  
+  if(filters.scIds) {
+    params.push(filters.scIds.split(','));
+    query = query + `
+    AND sc.SCId IN (?)`;
+  }
+
+  if(filters.typeIds){
+    params.push(filters.typeIds.split(','));
+    query = query + `
+    AND ret.TypeId IN (?)`;
+  }
+
+  query = query + `
+  GROUP BY ` + groupByParams.join(',') + `;`;
+
+  try {
+    let result = (await execute_query(serverName, query, params));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+export {get_all_data, get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare};
