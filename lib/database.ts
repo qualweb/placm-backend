@@ -1,7 +1,7 @@
 //const { DbError } = require("./_error");
 import {createConnection, Pool} from 'mysql';
 import {DB_CONFIG_PROTO} from './constants';
-import { poolPT, pool as poolDefault } from '..';
+import { poolPT, pool as poolDefault, poolTest } from '..';
 
 function execute_query(serverName: string, query: any, queryParams: any[] = []): Promise<any> {
   return new Promise(async (resolve, reject) => {
@@ -70,6 +70,9 @@ function execute_query(serverName: string, query: any, queryParams: any[] = []):
 
     let usingPool: Pool;
     switch(serverName) {
+      case 'test':
+        usingPool = poolTest;
+        break;
       case 'pt':
         usingPool = poolPT;
         break;

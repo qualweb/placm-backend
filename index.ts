@@ -19,7 +19,7 @@ import evaluationRouter from './routes/evaluation';
 import adminReportRouter from "./routes/admin/report";
 import adminStatementRouter from "./routes/admin/statement";
 import { createPool } from "mysql";
-import { DB_CONFIG_PROTO_PT, DB_CONFIG_PROTO } from "./lib/constants";
+import { DB_CONFIG_PROTO_PT, DB_CONFIG_PROTO, DB_CONFIG_PROTO_TEST } from "./lib/constants";
 
 const app = express();
 app.use(compression());
@@ -66,6 +66,7 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 const poolPT = createPool(DB_CONFIG_PROTO_PT);
+const poolTest = createPool(DB_CONFIG_PROTO_TEST);
 const pool = createPool(DB_CONFIG_PROTO);
 
 function onError(error: { syscall: string; code: any; }) {
@@ -99,4 +100,4 @@ function onListening() {
   debug('Listening on ' + bind);
 }
 
-export { app, pool, poolPT };
+export { app, pool, poolPT, poolTest };

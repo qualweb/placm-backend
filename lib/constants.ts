@@ -1,6 +1,7 @@
 import * as DB_CONFIG from './../db_config.json';
 import * as DB_CONFIG_PROTO from './../db_config_proto.json';
 import * as DB_CONFIG_PROTO_PT from './../db_config_proto_pt.json';
+import * as DB_CONFIG_PROTO_TEST from './../db_config_proto_test.json';
 import * as COUNTRY_JSON from './jsons/country-by-continent.json';
 import * as CONSTELLATIONS_JSON from './jsons/constellations.json';
 import * as PROTODATA_JSON from './jsons/protodata.json';
@@ -21,6 +22,7 @@ const DB_NAMES: { [key: string]: string } = {
   'pt': 'placmprotopt'
 }
 
-export {DB_CONFIG, DB_CONFIG_PROTO, DB_CONFIG_PROTO_PT, COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON,
+export {DB_CONFIG, DB_CONFIG_PROTO, DB_CONFIG_PROTO_PT, DB_CONFIG_PROTO_TEST,
+        COUNTRY_JSON, CONSTELLATIONS_JSON, PROTODATA_JSON,
         RULES_JSON, WCAG21, ELEMENT_TYPES,
         maxTextLength, emailRegex, twitterRegex, telephoneRegex, urlRegex, DB_NAMES};
