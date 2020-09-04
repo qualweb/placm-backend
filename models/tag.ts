@@ -50,17 +50,17 @@ const get_all_tag_data = async () => {
                 ON t.TagId = ta.TagId
             INNER JOIN
               Application app
-                ON app.ApplicationId = ta.ApplicationId AND app.Deleted = '0'
+                ON app.ApplicationId = ta.ApplicationId AND app.deleted = 0
             INNER JOIN
               Page p
-                ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+                ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
             INNER JOIN (
               SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
               FROM 
                 Assertion a
               WHERE 
                 date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-                AND a.Deleted = '0'
+                AND a.deleted = 0
               ORDER BY date DESC) a
                 ON a.PageId = p.PageId
             GROUP BY t.TagId;`;
@@ -121,17 +121,17 @@ const get_data = async (serverName: any, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -225,7 +225,7 @@ const get_data_sc = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-    ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
     (SELECT SCId, RuleId
         FROM RuleSuccessCriteria scr
@@ -242,11 +242,11 @@ const get_data_sc = async (serverName: string, filters: any) => {
         FROM Assertion a1 
         WHERE a.RuleId = a1.RuleId 
         AND a.PageId = a1.PageId)
-    AND a.Deleted = '0'
+    AND a.deleted = 0
     ORDER BY date DESC) a
     ON a.PageId = p.PageId
         AND scriteria.RuleId = a.RuleId
-  WHERE app.Deleted = '0' AND scriteria.SCId is not null`;
+  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -413,17 +413,17 @@ const get_data_compare = async (serverName: any, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -571,7 +571,7 @@ const get_data_sc_compare = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-    ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
     (SELECT SCId, RuleId
         FROM RuleSuccessCriteria scr
@@ -588,11 +588,11 @@ const get_data_sc_compare = async (serverName: string, filters: any) => {
         FROM Assertion a1 
         WHERE a.RuleId = a1.RuleId 
         AND a.PageId = a1.PageId)
-    AND a.Deleted = '0'
+    AND a.deleted = 0
     ORDER BY date DESC) a
     ON a.PageId = p.PageId
         AND scriteria.RuleId = a.RuleId
-  WHERE app.Deleted = '0' AND scriteria.SCId is not null`;
+  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');

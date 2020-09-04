@@ -16,14 +16,14 @@ const get_all_data = async () => {
       Rule r
     INNER JOIN
       Page p
-        ON p.Deleted = '0'
+        ON p.deleted = 0
     INNER JOIN
     (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
       FROM
         Assertion a
       WHERE
         date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.Deleted = '0'
+        AND a.deleted = 0
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
     WHERE r.RuleId = a.RuleId
@@ -126,18 +126,18 @@ const get_data_rule = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.RuleId = r.RuleId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -321,18 +321,18 @@ const get_data_element_type = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.RuleId = r.RuleId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -562,18 +562,18 @@ const get_data_rule_compare = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.RuleId = r.RuleId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -812,18 +812,18 @@ const get_data_element_type_compare = async (serverName: string, filters: any) =
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.RuleId = r.RuleId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');

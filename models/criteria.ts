@@ -64,7 +64,7 @@ const get_data_success_criteria = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
@@ -74,7 +74,7 @@ const get_data_success_criteria = async (serverName: string, filters: any) => {
                 FROM Assertion a1 
                   WHERE a.RuleId = a1.RuleId 
                   AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
   INNER JOIN
@@ -99,7 +99,7 @@ const get_data_success_criteria = async (serverName: string, filters: any) => {
   }
 
   query = query + `
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -279,7 +279,7 @@ const get_data_success_criteria_compare = async (serverName: string, filters: an
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
@@ -289,7 +289,7 @@ const get_data_success_criteria_compare = async (serverName: string, filters: an
                 FROM Assertion a1 
                   WHERE a.RuleId = a1.RuleId 
                   AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
   INNER JOIN
@@ -323,7 +323,7 @@ const get_data_success_criteria_compare = async (serverName: string, filters: an
   }
 
   query = query + `
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');

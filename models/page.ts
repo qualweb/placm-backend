@@ -16,17 +16,17 @@ const get_data_by_application = async (appId: number) => {
       Application app
     INNER JOIN
       Page p
-        ON p.ApplicationId = '${appId}' AND p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+        ON p.ApplicationId = '${appId}' AND p.ApplicationId = app.ApplicationId AND p.deleted = 0
     INNER JOIN
     (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
       FROM
         Assertion a
       WHERE
         date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.Deleted = '0'
+        AND a.deleted = 0
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
-    WHERE app.Deleted = '0'
+    WHERE app.deleted = 0
     GROUP BY p.Url;`;
     let result = (await execute_query_proto(query));
     return success(<any> result);

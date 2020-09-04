@@ -60,7 +60,7 @@ CREATE TABLE `AutomaticEvaluation` (
   `PagesNumber` int,
   `Summary` varchar(255),
   `EvaluationToolId` int NOT NULL,
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`AutoEvalId`),
   KEY `EvaluationToolId_fk_idx` (`EvaluationToolId`),
   CONSTRAINT `EvaluationTool_AE_fk` FOREIGN KEY (`EvaluationToolId`) REFERENCES `EvaluationTool` (`EvaluationToolId`) ON DELETE CASCADE
@@ -74,7 +74,7 @@ CREATE TABLE `ManualEvaluation` (
   `PagesNumber` int,
   `SatisfiedHeuristics` int,
   `ApplicableHeuristics` int,
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ManualEvalId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -88,7 +88,7 @@ CREATE TABLE `UsabilityTest` (
   `Participants` varchar(255),
   `Tanks` varchar(255),
   `Summary` varchar(255),
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`UsabTestId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -138,13 +138,13 @@ CREATE TABLE `Application` (
   -- `ShortName` varchar(255),
   `OrganizationId` int NOT NULL,
   -- 0 website, 1 app
-  `Type` tinyint NOT NULL DEFAULT '0',
+  `Type` tinyint NOT NULL DEFAULT 0,
   -- 0 public, 1 private
   `Sector` tinyint,
   `Url` text,
   `CreationDate` datetime NOT NULL,
   `CountryId` int,
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ApplicationId`),
   -- UNIQUE KEY `Url_UNIQUE` (`Url`),
   KEY `CountryId_fk_idx` (`CountryId`),
@@ -157,7 +157,7 @@ CREATE TABLE `Page` (
   `Url` text NOT NULL,
   `CreationDate` datetime NOT NULL,
   `ApplicationId` int NOT NULL,
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`PageId`),
   -- UNIQUE KEY `Url_UNIQUE` (`Url`),
   KEY `ApplicationId_fk_idx` (`ApplicationId`),
@@ -174,7 +174,7 @@ CREATE TABLE `Assertion` (
   `Description` varchar(255),
   `Outcome` enum('passed','failed','cantTell','inapplicable','untested') NOT NULL,
   -- `TestedUrl` varchar(255) NOT NULL,
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`AssertionId`),
   -- KEY `TestedUrl_idx` (`TestedUrl`),
   KEY `EvaluationToolId_fk_idx` (`EvaluationToolId`),
@@ -206,7 +206,7 @@ CREATE TABLE `AccessibilityStatement` (
   `TechnologiesUsed` varchar(255),
   -- 0 other, 1 internal, 2 external
   `AccessmentApproach` varchar(3) NOT NULL DEFAULT '000',
-  `Deleted` tinyint NOT NULL DEFAULT '0',
+  `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ASId`),
   -- UNIQUE KEY `ASUrl_UNIQUE` (`ASUrl`),
   CONSTRAINT `Application_AS_fk` FOREIGN KEY (`ApplicationId`) REFERENCES `Application` (`ApplicationId`) ON DELETE CASCADE

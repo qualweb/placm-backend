@@ -16,14 +16,14 @@ let query;
       EvaluationTool et
     INNER JOIN
       Page p
-        ON p.Deleted = '0'
+        ON p.deleted = 0
     INNER JOIN
     (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome, a.EvaluationToolId
       FROM
         Assertion a
       WHERE
         date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.Deleted = '0'
+        AND a.deleted = 0
       ORDER BY date DESC) a
         ON a.PageId = p.PageId
     WHERE et.EvaluationToolId = a.EvaluationToolId
@@ -107,18 +107,18 @@ const get_data_evaluation_tool = async (serverName: string, filters: any) => {
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.EvaluationToolId = eval.EvaluationToolId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -246,7 +246,7 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
   query = query + `
   INNER JOIN
     Page p
-    ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
     (SELECT SCId, RuleId
         FROM RuleSuccessCriteria scr
@@ -263,12 +263,12 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
         FROM Assertion a1 
         WHERE a.RuleId = a1.RuleId 
         AND a.PageId = a1.PageId)
-    AND a.Deleted = '0'
+    AND a.deleted = 0
     ORDER BY date DESC) a
     ON a.PageId = p.PageId
         AND scriteria.RuleId = a.RuleId
         AND a.EvaluationToolId = eval.EvaluationToolId
-  WHERE app.Deleted = '0' AND scriteria.SCId is not null`;
+  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -515,18 +515,18 @@ const get_data_evaluation_tool_compare = async (serverName: string, filters: any
   query = query + `
   INNER JOIN
     Page p
-      ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
   (SELECT a.AssertionId, a.PageId, a.Outcome, a.EvaluationToolId
     FROM
       Assertion a
     WHERE
       date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-      AND a.Deleted = '0'
+      AND a.deleted = 0
     ORDER BY date DESC) a
       ON a.PageId = p.PageId
       AND a.EvaluationToolId = eval.EvaluationToolId
-  WHERE app.Deleted = '0'`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -720,7 +720,7 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
   query = query + `
   INNER JOIN
     Page p
-    ON p.ApplicationId = app.ApplicationId AND p.Deleted = '0'
+    ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
     (SELECT SCId, RuleId
       FROM RuleSuccessCriteria scr
@@ -739,11 +739,11 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
           AND a.PageId = a1.PageId
           ORDER BY a1.Date DESC
           LIMIT 1)
-      AND a.Deleted = '0') a
+      AND a.deleted = 0) a
     ON a.PageId = p.PageId
       AND scriteria.RuleId = a.RuleId
       AND eval.EvaluationToolId = a.EvaluationToolId
-  WHERE app.Deleted = '0' AND scriteria.SCId is not null`;
+  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
