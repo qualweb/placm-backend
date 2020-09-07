@@ -370,12 +370,12 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
   }
 
   query = query + `
-  scriteria.SCId,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-  COUNT(DISTINCT scriteria.SCId, IF(a.AssertionId IS NULL OR a.Outcome = 'untested', 1, NULL)) as untested
+  scr.SCId,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+  (SELECT COUNT(SCId) from SuccessCriteria) as untested
   FROM Application app`;
   
   if(filters.tagIds){
@@ -404,12 +404,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
     Page p
     ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
-    (SELECT SCId, RuleId
-        FROM RuleSuccessCriteria scr
-    UNION ALL
-    SELECT SCId, NULL as RuleId
-      FROM SuccessCriteria sc
-            WHERE SCId NOT IN (SELECT SCId FROM RuleSuccessCriteria scr)) scriteria
+    RuleSuccessCriteria scr
   LEFT JOIN
     (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
@@ -422,8 +417,8 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
     AND a.deleted = 0
     ORDER BY date DESC) a
     ON a.PageId = p.PageId
-        AND scriteria.RuleId = a.RuleId
-  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
+      AND scr.RuleId = a.RuleId
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -502,24 +497,21 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
 
   query = query + `
   UPDATE workingTable
-    SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0
+    SET cantTell = 0, passed = 0, inapplicable = 0
     WHERE failed = 1;
   UPDATE workingTable
-    SET passed = 0, inapplicable = 0, untested = 0
+    SET passed = 0, inapplicable = 0
     WHERE failed = 0 AND cantTell = 1;
   UPDATE workingTable
-    SET inapplicable = 0, untested = 0
+    SET inapplicable = 0
     WHERE failed = 0 AND cantTell = 0 AND passed = 1;
-  UPDATE workingTable
-    SET untested = 0
-    WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 1;
   
   SELECT id, name, 
     SUM(failed) as nFailed, 
     SUM(cantTell) as nCantTell,
     SUM(passed) as nPassed,
     SUM(inapplicable) as nInapplicable,
-    SUM(untested) as nUntested`;
+    (untested - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
   if(filters.continentIds && filters.continentIds !== '0'){
     filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
@@ -1134,10 +1126,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   GROUP BY ` + groupByParams.join(',') + `;`;
 
   try {
-    let queryMaking = Date.now();
     let result = (await execute_query(serverName, query, params));
-    let end = Date.now();
-    console.log("end", end - queryMaking);
     return success(result);
   } catch(err){
     return error(err);

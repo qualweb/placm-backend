@@ -219,12 +219,12 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
   CREATE TEMPORARY TABLE workingTable AS
   SELECT eval.Name as name,
   eval.EvaluationToolId as id,
-  scriteria.SCId,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-  COUNT(DISTINCT scriteria.SCId, IF(a.AssertionId IS NULL OR a.Outcome = 'untested', 1, NULL)) as untested
+  scr.SCId,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+  (SELECT COUNT(SCId) from SuccessCriteria) as untested
   FROM
     EvaluationTool eval
   INNER JOIN
@@ -248,27 +248,22 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
     Page p
     ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
-    (SELECT SCId, RuleId
-        FROM RuleSuccessCriteria scr
-    UNION ALL
-    SELECT SCId, NULL as RuleId
-      FROM SuccessCriteria sc
-            WHERE SCId NOT IN (SELECT SCId FROM RuleSuccessCriteria scr)) scriteria
+    RuleSuccessCriteria scr
   LEFT JOIN
     (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
-    Assertion a
+      Assertion a
     WHERE
-    date = (SELECT max(a1.Date) 
+      date = (SELECT max(a1.Date) 
         FROM Assertion a1 
         WHERE a.RuleId = a1.RuleId 
-        AND a.PageId = a1.PageId)
+          AND a.PageId = a1.PageId)
     AND a.deleted = 0
     ORDER BY date DESC) a
     ON a.PageId = p.PageId
-        AND scriteria.RuleId = a.RuleId
-        AND a.EvaluationToolId = eval.EvaluationToolId
-  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
+      AND scr.RuleId = a.RuleId
+      AND a.EvaluationToolId = eval.EvaluationToolId
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -354,24 +349,21 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
 
   query = query + `
   UPDATE workingTable
-    SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0
+    SET cantTell = 0, passed = 0, inapplicable = 0
     WHERE failed = 1;
   UPDATE workingTable
-    SET passed = 0, inapplicable = 0, untested = 0
+    SET passed = 0, inapplicable = 0
     WHERE failed = 0 AND cantTell = 1;
   UPDATE workingTable
-    SET inapplicable = 0, untested = 0
+    SET inapplicable = 0
     WHERE failed = 0 AND cantTell = 0 AND passed = 1;
-  UPDATE workingTable
-    SET untested = 0
-    WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 1;
   
   SELECT id, name, 
     SUM(failed) as nFailed, 
     SUM(cantTell) as nCantTell,
     SUM(passed) as nPassed,
     SUM(inapplicable) as nInapplicable,
-    SUM(untested) as nUntested`;
+    (untested - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
   if(filters.continentIds && filters.continentIds !== '0'){
     filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
@@ -641,12 +633,12 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
   CREATE TEMPORARY TABLE workingTable AS
   SELECT eval.Name as name,
   eval.EvaluationToolId as id,
-  scriteria.SCId,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
-  COUNT(DISTINCT scriteria.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-  COUNT(DISTINCT scriteria.SCId, IF(a.AssertionId IS NULL OR a.Outcome = 'untested', 1, NULL)) as untested`;
+  scr.SCId,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+  (SELECT COUNT(SCId) from SuccessCriteria) as untested`;
 
   if(filters.continentIds){
     query = query + `,
@@ -720,30 +712,25 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
   query = query + `
   INNER JOIN
     Page p
-    ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
+      ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
   INNER JOIN
-    (SELECT SCId, RuleId
-      FROM RuleSuccessCriteria scr
-    UNION ALL
-    SELECT SCId, NULL as RuleId
-      FROM SuccessCriteria sc
-        WHERE SCId NOT IN (SELECT SCId FROM RuleSuccessCriteria scr)) scriteria
+    RuleSuccessCriteria scr
   LEFT JOIN
     (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId
     FROM
     Assertion a
     WHERE
       a.Date = (SELECT max(a1.Date) 
-          FROM Assertion a1 
-          WHERE a.RuleId = a1.RuleId 
+        FROM Assertion a1 
+        WHERE a.RuleId = a1.RuleId 
           AND a.PageId = a1.PageId
-          ORDER BY a1.Date DESC
-          LIMIT 1)
+        ORDER BY a1.Date DESC
+        LIMIT 1)
       AND a.deleted = 0) a
     ON a.PageId = p.PageId
-      AND scriteria.RuleId = a.RuleId
+      AND scr.RuleId = a.RuleId
       AND eval.EvaluationToolId = a.EvaluationToolId
-  WHERE app.deleted = 0 AND scriteria.SCId is not null`;
+  WHERE app.deleted = 0`;
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -834,24 +821,21 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
 
   query = query + `
   UPDATE workingTable
-    SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0
+    SET cantTell = 0, passed = 0, inapplicable = 0
     WHERE failed = 1;
   UPDATE workingTable
-    SET passed = 0, inapplicable = 0, untested = 0
+    SET passed = 0, inapplicable = 0
     WHERE failed = 0 AND cantTell = 1;
   UPDATE workingTable
-    SET inapplicable = 0, untested = 0
+    SET inapplicable = 0
     WHERE failed = 0 AND cantTell = 0 AND passed = 1;
-  UPDATE workingTable
-    SET untested = 0
-    WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 1;
   
   SELECT id, name, 
     SUM(failed) as nFailed, 
     SUM(cantTell) as nCantTell,
     SUM(passed) as nPassed,
     SUM(inapplicable) as nInapplicable,
-    SUM(untested) as nUntested`;
+    (untested - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
   if(filters.continentIds){
     query = query + `,
