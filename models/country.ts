@@ -621,7 +621,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   }
 
   query = query + `,
-  sc.SCId,
+  scr.SCId,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
