@@ -84,7 +84,12 @@ router.get('/countryDataSC', async function (req, res, next) {
 
 router.get('/continentDataCompare', async function (req, res, next) {
   try {
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -96,7 +101,12 @@ router.get('/continentDataCompare', async function (req, res, next) {
 
 router.get('/countryDataCompare', async function (req, res, next) {
   try {
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -108,7 +118,12 @@ router.get('/countryDataCompare', async function (req, res, next) {
 
 router.get('/continentDataSCCompare', async function (req, res, next) {
   try {
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_sc_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -120,7 +135,12 @@ router.get('/continentDataSCCompare', async function (req, res, next) {
 
 router.get('/countryDataSCCompare', async function (req, res, next) {
   try {
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_sc_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));

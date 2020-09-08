@@ -97,7 +97,12 @@ router.get('/orgDataSC', async function (req, res, next) {
 router.get('/appDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_compare('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -110,7 +115,12 @@ router.get('/appDataCompare', async function (req, res, next) {
 router.get('/sectorDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_compare('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -123,7 +133,12 @@ router.get('/sectorDataCompare', async function (req, res, next) {
 router.get('/orgDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_compare('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -136,7 +151,12 @@ router.get('/orgDataCompare', async function (req, res, next) {
 router.get('/appDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(req.query.filters){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'no queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_sc_compare('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -149,7 +169,12 @@ router.get('/appDataSCCompare', async function (req, res, next) {
 router.get('/sectorDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_sc_compare('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
@@ -162,7 +187,12 @@ router.get('/sectorDataSCCompare', async function (req, res, next) {
 router.get('/orgDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
+    let filters;
+    if(!!req.query.filters && req.query.filters !== '{}'){
+      filters = req.query.filters;
+    } else {
+      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+    }
     get_data_sc_compare('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
