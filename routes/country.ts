@@ -88,7 +88,7 @@ router.get('/continentDataCompare', async function (req, res, next) {
     if(!!req.query.filters && req.query.filters !== '{}'){
       filters = req.query.filters;
     } else {
-      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+      throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
@@ -105,7 +105,7 @@ router.get('/countryDataCompare', async function (req, res, next) {
     if(!!req.query.filters && req.query.filters !== '{}'){
       filters = req.query.filters;
     } else {
-      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+      throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))
@@ -122,7 +122,7 @@ router.get('/continentDataSCCompare', async function (req, res, next) {
     if(!!req.query.filters && req.query.filters !== '{}'){
       filters = req.query.filters;
     } else {
-      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+      throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_sc_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
@@ -139,7 +139,7 @@ router.get('/countryDataSCCompare', async function (req, res, next) {
     if(!!req.query.filters && req.query.filters !== '{}'){
       filters = req.query.filters;
     } else {
-      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+      throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_sc_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))

@@ -32,7 +32,7 @@ router.get('/scDataCompare', async function (req, res, next) {
     if(!!req.query.filters && req.query.filters !== '{}'){
       filters = req.query.filters;
     } else {
-      res.send({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
+      throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_success_criteria_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
