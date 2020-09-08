@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/scData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_success_criteria(req.query.name, filters)
+    get_data_success_criteria(req.query.name, filters)
       .then((result: any) => {/* 
         console.log(result);
         console.log(result.result.length);
@@ -29,7 +29,7 @@ router.get('/scData', async function (req, res, next) {
 router.get('/scDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_success_criteria_compare(req.query.name, filters)
+    get_data_success_criteria_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

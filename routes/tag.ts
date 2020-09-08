@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/tagNames', async function (req, res, next) {
   try {
-      await get_all_tags_names(req.query.name)
+      get_all_tags_names(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -19,7 +19,7 @@ router.get('/tagNames', async function (req, res, next) {
 router.get('/tagData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data(req.query.name, filters)
+    get_data(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -31,7 +31,7 @@ router.get('/tagData', async function (req, res, next) {
 router.get('/tagDataSC', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc(req.query.name, filters)
+    get_data_sc(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -43,7 +43,7 @@ router.get('/tagDataSC', async function (req, res, next) {
 router.get('/tagDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_compare(req.query.name, filters)
+    get_data_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -55,7 +55,7 @@ router.get('/tagDataCompare', async function (req, res, next) {
 router.get('/tagDataSCCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc_compare(req.query.name, filters)
+    get_data_sc_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

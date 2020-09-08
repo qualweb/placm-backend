@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/addData', async function (req, res, next) {
   try {
-    await add_filedata(req.query.name)
+    add_filedata(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -16,7 +16,7 @@ router.post('/addData', async function (req, res, next) {
 
 router.post('/addCountries', async function (req, res, next) {
   try {
-    await add_countries(req.query.name)
+    add_countries(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -26,16 +26,16 @@ router.post('/addCountries', async function (req, res, next) {
 });
 
 /*router.get('/idc', async function(req, res, next) {
-  await group_elems();
+  group_elems();
 });
 
 router.get('/idc2', async function(req, res, next) {
-  await update_rules_table_element_type();
+  update_rules_table_element_type();
 });*/
 
 router.get('/findASLinks', async function (req, res, next) {
   try {
-      await add_as_from_links_excel()
+      add_as_from_links_excel()
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -46,7 +46,7 @@ router.get('/findASLinks', async function (req, res, next) {
 
 router.get('/reset', async function (req, res, next) {
   try {
-    await reset_database(req.query.name)
+    reset_database(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -57,7 +57,7 @@ router.get('/reset', async function (req, res, next) {
 
 router.get('/fetch', async function (req, res, next) {
   try {
-    await get_link(req.query.url)
+    get_link(req.query.url)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

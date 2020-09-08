@@ -21,7 +21,7 @@ router.post('/add', async function (req, res, next) {
       const formData = JSON.parse(req.body.formData);
       const arrayLinks = JSON.parse(req.body.links);
       const arrayHtmls = JSON.parse(req.body.htmls);
-      await add_accessibility_statement(serverName, numLinks, formData, ...arrayLinks, ...arrayHtmls)
+      add_accessibility_statement(serverName, numLinks, formData, ...arrayLinks, ...arrayHtmls)
         .then(result => res.send(result))
         .catch((err: any) => res.send(err));
       }

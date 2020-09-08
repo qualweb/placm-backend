@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/byApp', async function (req, res, next) {
   try {
-      await get_data_by_application(req.query.id)
+      get_data_by_application(req.query.id)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

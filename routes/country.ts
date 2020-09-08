@@ -5,7 +5,7 @@ const router = express.Router();
 
 /*router.post('/add', async function (req, res, next) {
   try {
-      await add_countries()
+      add_countries()
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get('/byCountry', async function (req, res, next) {
   try {
-      await get_data_by_country()
+      get_data_by_country()
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -27,7 +27,7 @@ router.get('/byCountry', async function (req, res, next) {
 
 router.get('/countryNames', async function (req, res, next) {
   try {
-    await get_all_country_names(req.query.name)
+    get_all_country_names(req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -38,7 +38,7 @@ router.get('/countryNames', async function (req, res, next) {
 
 router.get('/continentData', async function (req, res, next) {
   try {
-      await get_data('continent', req.query.name)
+    get_data('continent', req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -50,7 +50,7 @@ router.get('/continentData', async function (req, res, next) {
 router.get('/countryData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data('country', req.query.name, filters)
+    get_data('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -61,7 +61,7 @@ router.get('/countryData', async function (req, res, next) {
 
 router.get('/continentDataSC', async function (req, res, next) {
   try {
-      await get_data_sc('continent', req.query.name)
+    get_data_sc('continent', req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -73,7 +73,7 @@ router.get('/continentDataSC', async function (req, res, next) {
 router.get('/countryDataSC', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc('country', req.query.name, filters)
+    get_data_sc('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -85,7 +85,7 @@ router.get('/countryDataSC', async function (req, res, next) {
 router.get('/continentDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-      await get_data_compare('continent', req.query.name, filters)
+    get_data_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -97,7 +97,7 @@ router.get('/continentDataCompare', async function (req, res, next) {
 router.get('/countryDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_compare('country', req.query.name, filters)
+    get_data_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -109,7 +109,7 @@ router.get('/countryDataCompare', async function (req, res, next) {
 router.get('/continentDataSCCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-      await get_data_sc_compare('continent', req.query.name, filters)
+    get_data_sc_compare('continent', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -121,7 +121,7 @@ router.get('/continentDataSCCompare', async function (req, res, next) {
 router.get('/countryDataSCCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc_compare('country', req.query.name, filters)
+    get_data_sc_compare('country', req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

@@ -22,7 +22,7 @@ router.post('/add', async function (req, res, next) {
         const serverName = req.body.serverName;
         const formData = JSON.parse(req.body.formData);
         const arrayJsons = JSON.parse(req.body.jsons);
-        await add_earl_report(serverName, formData, ...arrayJsons)
+        add_earl_report(serverName, formData, ...arrayJsons)
           .then(result => res.send(result))
           .catch((err: any) => res.send(err));
       }

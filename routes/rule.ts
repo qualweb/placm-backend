@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/allData', async function (req, res, next) {
   try {
-      await get_all_data()
+      get_all_data()
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -17,7 +17,7 @@ router.get('/allData', async function (req, res, next) {
 router.get('/ruleData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_rule(req.query.name, filters)
+    get_data_rule(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -29,7 +29,7 @@ router.get('/ruleData', async function (req, res, next) {
 router.get('/elemData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_element_type(req.query.name, filters)
+    get_data_element_type(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -41,7 +41,7 @@ router.get('/elemData', async function (req, res, next) {
 router.get('/ruleDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_rule_compare(req.query.name, filters)
+    get_data_rule_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -53,7 +53,7 @@ router.get('/ruleDataCompare', async function (req, res, next) {
 router.get('/elemDataCompare', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_element_type_compare(req.query.name, filters)
+    get_data_element_type_compare(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

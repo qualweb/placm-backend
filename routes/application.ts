@@ -7,8 +7,7 @@ router.get('/scApp', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    console.log(filters);
-    await get_all_sc_data_app(serverName, filters)
+    get_all_sc_data_app(serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -21,7 +20,7 @@ router.get('/appData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data('app', serverName, filters)
+    get_data('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -34,7 +33,7 @@ router.get('/sectorData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data('sector', serverName, filters)
+    get_data('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -47,7 +46,7 @@ router.get('/orgData', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data('org', serverName, filters)
+    get_data('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -60,7 +59,7 @@ router.get('/appDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc('app', serverName, filters)
+    get_data_sc('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -73,7 +72,7 @@ router.get('/sectorDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc('sector', serverName, filters)
+    get_data_sc('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -86,7 +85,7 @@ router.get('/orgDataSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc('org', serverName, filters)
+    get_data_sc('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -99,7 +98,7 @@ router.get('/appDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_compare('app', serverName, filters)
+    get_data_compare('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -112,7 +111,7 @@ router.get('/sectorDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_compare('sector', serverName, filters)
+    get_data_compare('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -125,7 +124,7 @@ router.get('/orgDataCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_compare('org', serverName, filters)
+    get_data_compare('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -138,7 +137,7 @@ router.get('/appDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc_compare('app', serverName, filters)
+    get_data_sc_compare('app', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -151,7 +150,7 @@ router.get('/sectorDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc_compare('sector', serverName, filters)
+    get_data_sc_compare('sector', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -164,7 +163,7 @@ router.get('/orgDataSCCompare', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    await get_data_sc_compare('org', serverName, filters)
+    get_data_sc_compare('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
