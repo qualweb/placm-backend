@@ -1,5 +1,5 @@
 import express from "express";
-import { get_all_data, get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare } from "../models/rule";
+import { get_all_data, get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare, get_names } from "../models/rule";
 
 const router = express.Router();
 
@@ -71,5 +71,33 @@ router.get('/elemDataCompare', async function (req, res, next) {
       res.send(err);
   }
 });
+
+router.get('/ruleNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names('rule', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/typeNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names('type', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+
 
 export = router;

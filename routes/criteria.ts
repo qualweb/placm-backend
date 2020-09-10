@@ -1,5 +1,5 @@
 import express from "express";
-import { get_data_success_criteria, get_data_success_criteria_compare } from "../models/criteria";
+import { get_data_success_criteria, get_data_success_criteria_compare, get_names } from "../models/criteria";
 
 const router = express.Router();
 
@@ -35,6 +35,19 @@ router.get('/scDataCompare', async function (req, res, next) {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_success_criteria_compare(req.query.name, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/scNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names(serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

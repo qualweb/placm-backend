@@ -1,5 +1,5 @@
 import express from "express";
-import { get_data_by_evaluation_tool, get_data_evaluation_tool, get_data_evaluation_tool_sc, get_data_evaluation_tool_compare, get_data_evaluation_tool_sc_compare } from "../models/evaluation";
+import { get_data_by_evaluation_tool, get_data_evaluation_tool, get_data_evaluation_tool_sc, get_data_evaluation_tool_compare, get_data_evaluation_tool_sc_compare, get_names } from "../models/evaluation";
 
 const router = express.Router();
 
@@ -64,6 +64,19 @@ router.get('/evalToolDataSCCompare', async function (req, res, next) {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
     get_data_evaluation_tool_sc_compare(req.query.name, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/evalToolNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names(serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

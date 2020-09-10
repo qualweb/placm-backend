@@ -1,5 +1,5 @@
 import express from "express";
-import { get_data, get_data_sc, get_data_compare, get_data_sc_compare, get_all_sc_data_app } from "../models/application";
+import { get_data, get_data_sc, get_data_compare, get_data_sc_compare, get_all_sc_data_app, get_names } from "../models/application";
 
 const router = express.Router();
 
@@ -8,6 +8,45 @@ router.get('/scApp', async function (req, res, next) {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
     get_all_sc_data_app(serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/appNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names('app', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/sectorNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names('sector', serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
+router.get('/orgNames', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    get_names('org', serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

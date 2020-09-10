@@ -81,12 +81,13 @@ function execute_query(serverName: string, query: any, queryParams: any[] = []):
         break;
     }
 
+    let queryString;
     usingPool.getConnection(function(err, connection) {
       if(err){
         console.log(err);
         reject(new Error(err.message));
       } else {
-        connection.query(query, queryParams, (err: any, res: unknown) => {
+        queryString = connection.query(query, queryParams, (err: any, res: unknown) => {
           connection.release();
           if (err) {
             console.log(err);
@@ -95,6 +96,7 @@ function execute_query(serverName: string, query: any, queryParams: any[] = []):
             resolve(res);
           }
         });
+        //console.log(queryString.sql);
       }
     });
   }); 
