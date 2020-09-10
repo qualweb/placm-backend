@@ -347,7 +347,8 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
   let params = [];
   let filtered, splitted;
   let query =
-  `DROP TABLE IF EXISTS workingTable;
+  `SET @scTotal = (SELECT COUNT(SCId) from SuccessCriteria);
+  DROP TABLE IF EXISTS workingTable;
   CREATE TEMPORARY TABLE workingTable AS`;
 
   switch(tableName){
@@ -374,8 +375,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
-  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-  (SELECT COUNT(SCId) from SuccessCriteria) as untested
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable
   FROM Application app`;
   
   if(filters.tagIds){
@@ -511,7 +511,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
     SUM(cantTell) as nCantTell,
     SUM(passed) as nPassed,
     SUM(inapplicable) as nInapplicable,
-    (untested - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
+    (@scTotal - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
   if(filters.continentIds && filters.continentIds !== '0'){
     filtered = filters.continentIds.split(',').filter(function(v: string, i: any, arr: any){return v !== '0';});
@@ -867,7 +867,8 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   let params = [];
   let filtered, splitted;
   let query =
-  `DROP TABLE IF EXISTS workingTable;
+  `SET @scTotal = (SELECT COUNT(SCId) from SuccessCriteria);
+  DROP TABLE IF EXISTS workingTable;
   CREATE TEMPORARY TABLE workingTable AS`;
 
   switch(tableName){
@@ -894,8 +895,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'failed', 1, NULL)) as failed,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
-  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-  (SELECT COUNT(SCId) from SuccessCriteria) as untested`;
+  COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable`;
 
   if(filters.continentIds){
     query = query + `,
@@ -1083,7 +1083,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
     SUM(cantTell) as nCantTell,
     SUM(passed) as nPassed,
     SUM(inapplicable) as nInapplicable,
-    (untested - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
+    (@scTotal - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
   if(filters.continentIds){
     query = query + `,
