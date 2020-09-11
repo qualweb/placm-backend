@@ -414,7 +414,7 @@ const get_data_evaluation_tool_sc = async (serverName: string, filters: any) => 
 const get_data_evaluation_tool_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
-  let groupByParam;
+  let groupByParam = '';
   if(filters !== {}){
     groupByParam = Object.keys(filters)[0];
     if(!groupByParam.includes('eval'))
@@ -435,37 +435,37 @@ const get_data_evaluation_tool_compare = async (serverName: string, filters: any
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
 
-  if(filters.continentIds){
+  if(groupByParam === 'continentIds'){
     query = query + `,
     cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 
-  if(filters.countryIds){
+  if(groupByParam === 'countryIds'){
     query = query + `,
     c.CountryId as countryId,
     c.Name as countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     t.TagId as tagId,
     t.Name as tagName`;
   }
 
-  if(filters.orgIds){
+  if(groupByParam === 'orgIds'){
     query = query + `,
     org.OrganizationId as orgId,
     org.Name as orgName`;
   }
   
-  if(filters.sectorIds){
+  if(groupByParam === 'sectorIds'){
     query = query + `,
     app.Sector as sectorId,
     IF(app.Sector = '0', 'Public', 'Private') as sectorName`;
   }
 
-  if(filters.appIds){
+  if(groupByParam === 'appIds'){
     query = query + `,
     app.ApplicationId as appId,
     app.Name as appName`;
@@ -619,7 +619,7 @@ const get_data_evaluation_tool_compare = async (serverName: string, filters: any
 const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
-  let groupByParam;
+  let groupByParam = '';
   if(filters !== {}){
     groupByParam = Object.keys(filters)[0];
     if(!groupByParam.includes('eval'))
@@ -640,37 +640,37 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable`;
 
-  if(filters.continentIds){
+  if(groupByParam === 'continentIds'){
     query = query + `,
     cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 
-  if(filters.countryIds){
+  if(groupByParam === 'countryIds'){
     query = query + `,
     c.CountryId as countryId,
     c.Name as countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     t.TagId as tagId,
     t.Name as tagName`;
   }
 
-  if(filters.orgIds){
+  if(groupByParam === 'orgIds'){
     query = query + `,
     org.OrganizationId as orgId,
     org.Name as orgName`;
   }
 
-  if(filters.sectorIds){
+  if(groupByParam === 'sectorIds'){
     query = query + `,
     app.Sector as sectorId,
     IF(app.Sector = '0', 'Public', 'Private') as sectorName`;
   }
 
-  if(filters.appIds){
+  if(groupByParam === 'appIds'){
     query = query + `,
     app.ApplicationId as appId,
     app.Name as appName`;
@@ -837,37 +837,37 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
     SUM(inapplicable) as nInapplicable,
     (@scTotal - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
-  if(filters.continentIds){
+  if(groupByParam === 'continentIds'){
     query = query + `,
     continentId,
     continentName`;
   }
 
-  if(filters.countryIds){
+  if(groupByParam === 'countryIds'){
     query = query + `,
     countryId,
     countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     tagId,
     tagName`;
   }
 
-  if(filters.orgIds){
+  if(groupByParam === 'orgIds'){
     query = query + `,
     orgId,
     orgName`;
   }
   
-  if(filters.sectorIds){
+  if(groupByParam === 'sectorIds'){
     query = query + `,
     sectorId,
     sectorName`;
   }
 
-  if(filters.appIds){
+  if(groupByParam === 'appIds'){
     query = query + `,
     appId,
     appName`;

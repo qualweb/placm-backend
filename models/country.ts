@@ -424,7 +424,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters?: any)
 const get_data_compare = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
-  let groupByParam;
+  let groupByParam = '';
   if(filters !== {}){
     groupByParam = Object.keys(filters)[0];
     if(!groupByParam.includes(tableName))
@@ -462,19 +462,19 @@ const get_data_compare = async (tableName: string, serverName: string, filters?:
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
     
-  if(filters.continentIds && tableName !== 'continent'){
+  if(groupByParam === 'continentIds' && tableName !== 'continent'){
     query = query + `,
     cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 
-  if(filters.countryIds && tableName !== 'country'){
+  if(groupByParam === 'continentIds' && tableName !== 'country'){
     query = query + `,
     c.CountryId as countryId,
     c.Name as countryName`;
   }
   
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     t.TagId as tagId,
     t.Name as tagName`;
@@ -589,7 +589,7 @@ const get_data_compare = async (tableName: string, serverName: string, filters?:
 const get_data_sc_compare = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
-  let groupByParam;
+  let groupByParam = '';
   if(filters !== {}){
     groupByParam = Object.keys(filters)[0];
     if(!groupByParam.includes(tableName))
@@ -628,19 +628,19 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'passed', 1, NULL)) as passed,
   COUNT(DISTINCT scr.SCId, IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable`
 
-  if(filters.continentIds && tableName !== 'continent'){
+  if(groupByParam === 'continentIds' && tableName !== 'continent'){
     query = query + `,
     cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 
-  if(filters.countryIds && tableName !== 'country'){
+  if(groupByParam === 'countryIds' && tableName !== 'country'){
     query = query + `,
     c.CountryId as countryId,
     c.Name as countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     t.TagId as tagId,
     t.Name as tagName`;
@@ -768,19 +768,19 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
     SUM(inapplicable) as nInapplicable,
     (@scTotal - SUM(failed) - SUM(cantTell) - SUM(passed) - SUM(inapplicable)) as nUntested`;
 
-  if(filters.continentIds && tableName !== 'continent'){
+  if(groupByParam === 'continentIds' && tableName !== 'continent'){
     query = query + `,
     continentId,
     continentName`;
   }
   
-  if(filters.countryIds && tableName !== 'country'){
+  if(groupByParam === 'countryIds' && tableName !== 'country'){
     query = query + `,
     countryId,
     countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     tagId,
     tagName`;

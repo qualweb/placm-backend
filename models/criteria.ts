@@ -200,7 +200,7 @@ const get_data_success_criteria = async (serverName: string, filters: any) => {
 const get_data_success_criteria_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
-  let groupByParam;
+  let groupByParam = '';
   if(filters !== {}){
     groupByParam = Object.keys(filters)[0];
     if(groupByParam !== 'scIds')
@@ -222,43 +222,43 @@ const get_data_success_criteria_compare = async (serverName: string, filters: an
     COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
     COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested`;
 
-  if(filters.continentIds){
+  if(groupByParam === 'continentIds'){
     query = query + `,
     cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 
-  if(filters.countryIds){
+  if(groupByParam === 'countryIds'){
     query = query + `,
     c.CountryId as countryId,
     c.Name as countryName`;
   }
 
-  if(filters.tagIds){
+  if(groupByParam === 'tagIds'){
     query = query + `,
     t.TagId as tagId,
     t.Name as tagName`;
   }
 
-  if(filters.orgIds){
+  if(groupByParam === 'orgIds'){
     query = query + `,
     org.OrganizationId as orgId,
     org.Name as orgName`;
   }
 
-  if(filters.sectorIds){
+  if(groupByParam === 'sectorIds'){
     query = query + `,
     app.Sector as sectorId,
     IF(app.Sector = '0', 'Public', 'Private') as sectorName`;
   }
 
-  if(filters.appIds){
+  if(groupByParam === 'appIds'){
     query = query + `,
     app.ApplicationId as appId,
     app.Name as appName`;
   }
   
-  if(filters.evalIds){
+  if(groupByParam === 'evalIds'){
     params.push(filters.evalIds.split(','));
     query = query + `,
     a.EvaluationToolId as evalId,
