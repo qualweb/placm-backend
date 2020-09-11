@@ -95,6 +95,12 @@ const get_data_rule = async (serverName: string, filters: any) => {
     query = query + `,
     (SELECT JSON_ARRAYAGG(et.Name) FROM ElementType et WHERE et.TypeId IN (?)) as typeNames`;
   }
+
+  if(filters.scIds){
+    params.push(filters.scIds.split(','));
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(sc.Name) FROM SuccessCriteria sc WHERE sc.SCId IN (?)) as scNames`;
+  }
     
   query = query + `
   FROM
@@ -107,6 +113,13 @@ const get_data_rule = async (serverName: string, filters: any) => {
     INNER JOIN
       RuleElementType ret
         ON ret.RuleId = r.RuleId`;
+  }
+  
+  if(filters.scIds){
+    query += `
+    INNER JOIN
+      RuleSuccessCriteria src
+        ON src.RuleId = r.RuleId`;
   }
 
   if(filters.tagIds){
@@ -221,6 +234,12 @@ const get_data_rule = async (serverName: string, filters: any) => {
     params.push(filters.evalIds.split(','));
     query = query + `
     AND a.EvaluationToolId IN (?)`;
+  }
+  
+  if(filters.scIds){
+    query += `
+    AND src.SCId IN (?)`;
+    params.push(filters.scIds);
   }
 
   if(filters.typeIds){
@@ -291,6 +310,11 @@ const get_data_element_type = async (serverName: string, filters: any) => {
     query = query + `,
     (SELECT JSON_ARRAYAGG(eval.Name) FROM EvaluationTool eval WHERE a.EvaluationToolId IN (?) AND eval.EvaluationToolId = a.EvaluationToolId) as evalNames`;
   }
+    if(filters.scIds){
+    params.push(filters.scIds.split(','));
+    query = query + `,
+    (SELECT JSON_ARRAYAGG(sc.Name) FROM SuccessCriteria sc WHERE sc.SCId IN (?)) as scNames`;
+  }
     
   query = query + `
   FROM
@@ -303,6 +327,13 @@ const get_data_element_type = async (serverName: string, filters: any) => {
   INNER JOIN
     ElementType et
       ON et.TypeId = ret.TypeId`;
+  
+  if(filters.scIds){
+    query += `
+    INNER JOIN
+      RuleSuccessCriteria src
+        ON src.RuleId = r.RuleId`;
+  }
 
   if(filters.tagIds){
     query = query + `
@@ -399,7 +430,7 @@ const get_data_element_type = async (serverName: string, filters: any) => {
     query = query + `
     AND app.ApplicationId IN (?)`;
   }
-  
+
   if(filters.sectorIds){
     params.push(filters.sectorIds.split(','));
     query = query + `
@@ -417,6 +448,13 @@ const get_data_element_type = async (serverName: string, filters: any) => {
     query = query + `
     AND a.EvaluationToolId IN (?)`;
   }
+
+  if(filters.scIds){
+    query += `
+    AND src.SCId IN (?)`;
+    params.push(filters.scIds);
+  }
+
   query = query + `
   GROUP BY 1, 2;`;
 
