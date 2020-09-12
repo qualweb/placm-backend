@@ -477,7 +477,7 @@ const get_data_sc_compare = async (serverName: string, filters: any) => {
     if(!groupByParam.includes('tag'))
       groupByParams.push(groupByParam.substring(0, groupByParam.length - 1));
   }
-  groupByParams.push('id');
+  groupByParams.push('id', 'name');
   let params = [];
   let filtered, splitted;
   let query =

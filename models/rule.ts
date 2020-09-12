@@ -751,7 +751,7 @@ const get_data_element_type_compare = async (serverName: string, filters: any) =
 
   if(groupByParam === 'continentIds'){
     query = query + `,
-    cont.ContinentId as continentIds,
+    cont.ContinentId as continentId,
     cont.Name as continentName`;
   }
 

@@ -863,7 +863,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
     if(!groupByParam.includes(tableName))
       groupByParams.push(groupByParam.substring(0, groupByParam.length - 1));
   }
-  groupByParams.push('id');
+  groupByParams.push('id', 'name');
   let params = [];
   let filtered, splitted;
   let query =

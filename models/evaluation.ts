@@ -625,7 +625,7 @@ const get_data_evaluation_tool_sc_compare = async (serverName: string, filters: 
     if(!groupByParam.includes('eval'))
     groupByParams.push(groupByParam.substring(0, groupByParam.length - 1));
   }
-  groupByParams.push('id');
+  groupByParams.push('id', 'name');
   let params = [];
   let filtered, splitted;
   let query =
