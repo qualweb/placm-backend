@@ -18,6 +18,7 @@ import criteriaRouter from './routes/criteria';
 import evaluationRouter from './routes/evaluation';
 import adminReportRouter from "./routes/admin/report";
 import adminStatementRouter from "./routes/admin/statement";
+import timelineRouter from "./routes/timeline";
 import { createPool } from "mysql";
 import { DB_CONFIG_PROTO_PT, DB_CONFIG_PROTO, DB_CONFIG_PROTO_TEST } from "./lib/constants";
 
@@ -39,6 +40,7 @@ app.use('/page', pageRouter);
 app.use('/sc', criteriaRouter);
 app.use('/rule', ruleRouter);
 app.use('/evaluation', evaluationRouter);
+app.use('/timeline', timelineRouter);
 
 app.use('/admin/report', adminReportRouter);
 app.use('/admin/statement', adminStatementRouter);
