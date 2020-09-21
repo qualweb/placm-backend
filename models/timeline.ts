@@ -792,7 +792,7 @@ const assertions_by_month = async (serverName: string, filters?: any) => {
   }
 
   if(filters.ruleIds){
-    params.push(filters.scIds.split(','));
+    params.push(filters.ruleIds.split(','));
     query = query + `,
     (SELECT JSON_ARRAYAGG(r.Name) FROM Rule r WHERE r.RuleId IN (?)) as ruleNames`;
   }
