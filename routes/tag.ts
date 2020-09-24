@@ -8,7 +8,6 @@ const router = express.Router();
 router.get('/tagNames', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    console.log(filters);
     get_names(req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));

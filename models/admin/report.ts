@@ -45,8 +45,6 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
     await execute_query(serverName, 'SET autocommit = 0; START TRANSACTION;');
     for (let assertion of assertions) {
       if(assertion){
-        //console.log(index);
-        //console.log(assertion);
 
         index++;
         urlRegex = new RegExp(/^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)(.*)?(#[\w\-]+)?$/);
