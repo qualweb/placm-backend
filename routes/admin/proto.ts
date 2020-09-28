@@ -35,9 +35,7 @@ router.get('/idc2', async function(req, res, next) {
 
 router.get('/findASLinks', async function (req, res, next) {
   try {
-      add_as_from_links_excel()
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
+      res.send(await add_as_from_links_excel());
   } catch (err) {
     console.log(err);
     res.send(err);
