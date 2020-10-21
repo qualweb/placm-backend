@@ -581,7 +581,10 @@ const get_data_rule_compare = async (serverName: string, filters: any) => {
     query = query + `
     LEFT JOIN
       TagApplication ta
-        ON ta.ApplicationId = app.ApplicationId`;
+        ON ta.ApplicationId = app.ApplicationId
+    LEFT JOIN
+      Tag t
+        ON t.TagId = ta.TagId`;
   }
 
   if(filters.continentIds || filters.countryIds){

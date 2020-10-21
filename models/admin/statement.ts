@@ -162,6 +162,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     /* ---------- handle standard ---------- */
     standardElem = statements[i].querySelectorAll(".basic-information.conformance-standard");
     if(standardElem.length){
+      /* W3 AS generator */
       //standardText = standardElem[0].text;
       standardText = standardElem[0].childNodes[0].text;
       //standardText = standardText.substring(0, standardText.length - 1);
@@ -195,7 +196,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       }
     }
     
-    /* ---------- handle accessibility seal ---------- */
+    /* ---------- handle accessibility seal - Portuguese AS generator ---------- */
     sealElem = statements[i].querySelectorAll(".mr.mr-seal");
     if(sealElem.length){
       seal = sealElem[0].text.toLowerCase();
@@ -268,7 +269,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       }
     }
 
-    /* ---------- handle efforts ---------- */
+    /* ---------- handle efforts - Portuguese AS generator ---------- */
     effortsListElem = statements[i].querySelectorAll('.organizational-effort.accessibility-measures');
     if(effortsListElem.length){
       for(let child of effortsListElem[0].childNodes){
@@ -279,6 +280,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
     }
     
     /* ---------- handle limitations ---------- */
+    /* Portuguese AS generator */
     limitationsListElem = statements[i].querySelectorAll('#non-conformance-sections');
     if(limitationsListElem.length){
       for(let child of limitationsListElem[0].childNodes){
@@ -287,6 +289,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
         }
       };
     } else {
+      /* W3 AS generator */
       limitationsListElem = statements[i].querySelectorAll('.technical-information.accessibility-limitations');
       if(limitationsListElem.length){
         for(let child of limitationsListElem[0].childNodes){
@@ -297,7 +300,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       }
     }
 
-    /* ---------- handle technologies ---------- */
+    /* ---------- handle technologies - W3 generator ---------- */
     technologiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(technologiesListElem.length){
       for(let tech of technologiesListElem[0].childNodes){
@@ -311,7 +314,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       technologiesUsed = technologiesUsed.substring(0, technologiesUsed.length - 1);
     }
 
-    /* ---------- handle compatabilities ---------- */
+    /* ---------- handle compatabilities - W3 generator ---------- */
     compatabilitiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(compatabilitiesListElem.length){
       for(let child of compatabilitiesListElem[0].childNodes){
@@ -321,7 +324,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       };
     }
 
-    /* ---------- handle incompatabilities ---------- */
+    /* ---------- handle incompatabilities - W3 generator ---------- */
     incompatabilitiesListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(incompatabilitiesListElem.length){
       for(let child of incompatabilitiesListElem[0].childNodes){
@@ -331,7 +334,7 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
       };
     }
 
-    /* ---------- handle accessment approach ---------- */
+    /* ---------- handle accessment approach - W3 generator ---------- */
     approachListElem = statements[i].querySelectorAll('.technical-information.technologies-used');
     if(approachListElem.length){
       for(let child of approachListElem[0].childNodes){

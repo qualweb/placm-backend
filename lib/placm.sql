@@ -196,16 +196,16 @@ CREATE TABLE `AccessibilityStatement` (
   `State` enum('0','1','2','3') NOT NULL,
   `ASUrl` text,
   -- 0 none, 1 bronze, 2 prata, 3 ouro
-  `UsabilityStamp` enum('0','1','2','3'),
-  `UsabilityStampText` varchar(255),
-  `EffortsCounter` int,
-  `LimitationsWithAltCounter` int,
+  `UsabilityStamp` enum('0','1','2','3'), --pt
+  `UsabilityStampText` varchar(255), --pt
+  `EffortsCounter` int, --pt
+  `LimitationsWithAltCounter` int, --pt
   `LimitationsWithoutAltCounter` int,
-  `CompatabilitiesCounter` int,
-  `IncompatabilitiesCounter` int,
-  `TechnologiesUsed` varchar(255),
+  `CompatabilitiesCounter` int, --w3
+  `IncompatabilitiesCounter` int, --w3
+  `TechnologiesUsed` varchar(255), --w3
   -- 0 other, 1 internal, 2 external
-  `AccessmentApproach` varchar(3) NOT NULL DEFAULT '000',
+  `AccessmentApproach` varchar(3) NOT NULL DEFAULT '000', --w3
   `Deleted` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`ASId`),
   -- UNIQUE KEY `ASUrl_UNIQUE` (`ASUrl`),
