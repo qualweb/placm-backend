@@ -8,11 +8,12 @@ import compression from "compression";
 import expressValidator from "express-validator";
 const debug = require('debug')('placm-backend:server');
 
-import protoRouter from "./routes/admin/proto";
+import documentRouter from "./routes/admin/document";
+import dbRouter from "./routes/admin/database";
+import crawlerRouter from "./routes/admin/crawler";
 import countryRouter from "./routes/country";
 import tagRouter from './routes/tag';
 import applicationRouter from './routes/application';
-import pageRouter from './routes/page';
 import ruleRouter from './routes/rule';
 import criteriaRouter from './routes/criteria';
 import evaluationRouter from './routes/evaluation';
@@ -20,7 +21,7 @@ import adminReportRouter from "./routes/admin/report";
 import adminStatementRouter from "./routes/admin/statement";
 import timelineRouter from "./routes/timeline";
 import { createPool } from "mysql";
-import { DB_CONFIG_PROTO_PT, DB_CONFIG_PROTO, DB_CONFIG_PROTO_TEST } from "./lib/constants";
+import { DB_CONFIG, DB_CONFIG_PT, DB_CONFIG_TEST } from "./util/constants";
 
 const app = express();
 app.use(compression());
@@ -32,11 +33,12 @@ app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressValidator());
 
-app.use('/proto', protoRouter);
+app.use('/doc', documentRouter);
+app.use('/db', dbRouter);
+app.use('/crawler', crawlerRouter);
 app.use('/country', countryRouter);
 app.use('/tag', tagRouter);
 app.use('/application', applicationRouter);
-app.use('/page', pageRouter);
 app.use('/sc', criteriaRouter);
 app.use('/rule', ruleRouter);
 app.use('/evaluation', evaluationRouter);
@@ -67,9 +69,10 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-const poolPT = createPool(DB_CONFIG_PROTO_PT);
-const poolTest = createPool(DB_CONFIG_PROTO_TEST);
-const pool = createPool(DB_CONFIG_PROTO);
+/* Connection pooling to serve multiple databases */
+const pool = createPool(DB_CONFIG);
+const poolPT = createPool(DB_CONFIG_PT);
+const poolTest = createPool(DB_CONFIG_TEST);
 
 function onError(error: { syscall: string; code: any; }) {
   if (error.syscall !== 'listen') {
@@ -84,11 +87,9 @@ function onError(error: { syscall: string; code: any; }) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
       process.exit(1);
-      break;
     case 'EADDRINUSE':
       console.error(bind + ' is already in use');
       process.exit(1);
-      break;
     default:
       throw error;
   }

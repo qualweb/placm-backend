@@ -1,10 +1,10 @@
-import { execute_query } from "../../lib/database";
+import { execute_query } from "../../database/database";
 import { findAssertions } from "../../lib/earl/find_assertions";
-import { error, success } from "../../lib/responses";
+import { error, success } from "../../util/responses";
 import { EarlAssertion } from "../../lib/earl/earl_types";
-import { regulateStringLength, readyUrlToQuery, readyStringToQuery } from "../../lib/util";
 import { trim } from "lodash";
 
+/* Parse and insert EARL report into database */
 const add_earl_report = async (serverName: string, formData: any, ...jsons: string[]) => {
   let query;
   let urlRegex, urlTested, urlRegexMatch, assertionDate;
@@ -139,24 +139,6 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
         orgId = org.OrganizationId ? org.OrganizationId : org.insertId;
 
         /* ---------- handle website/app ---------- */
-
-        /*** this is the way to get the url without the form, do we need this? ***/
-        /*websiteUrl = regulateStringLength(urlRegexMatch ? urlRegexMatch[3] : "");
-        let websiteUrlSplitted = websiteUrl.split(".");
-        if(websiteUrl.length > 0){
-          websiteName = regulateStringLength(websiteUrlSplitted[0] === 'www' ? websiteUrlSplitted[1] : websiteUrlSplitted[0]);
-        } else {
-          //todo tem de mandar o nome da aplicacao tambem
-        }
-        query = `SELECT ApplicationId FROM Application WHERE url = "${websiteUrl}";`;
-        website = (await execute_query(serverName, query))[0];
-        if (!website) {
-          query = `INSERT INTO Application (name, url, creationdate)
-            VALUES ("${websiteName}", "${websiteUrl}", "${assertionDate}");`;
-          website = await execute_query(serverName, query);
-          result.applications.push(website.insertId);
-        }*/
-        /***                                                                  ***/
         websiteUrl = formData.appUrl ? formData.appUrl : null;
         websiteName = formData.appName;
         websiteCountry = formData.country ? formData.country.id : null;
@@ -205,7 +187,6 @@ const add_earl_report = async (serverName: string, formData: any, ...jsons: stri
         }
 
         /* ---------- handle page ---------- */
-        //pageUrl = regulateStringLength(websiteUrl.concat(urlRegexMatch[4]));
         pageUrl = urlTested;
 
         query = `SELECT PageId FROM Page WHERE url = ?;`;

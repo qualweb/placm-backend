@@ -1,8 +1,9 @@
-drop database placmproto;
-create schema placmproto default character set utf8mb4;
-grant all privileges on placmproto.* to 'bandrade'@'localhost';
+drop database if exists placmdb;
+create schema placmdb default character set utf8mb4;
+-- CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+grant all privileges on placmdb.* to 'user'@'localhost';
 flush privileges;
-use placmproto;
+use placmdb;
 
 CREATE TABLE `Rule` (
   `RuleId` int NOT NULL AUTO_INCREMENT,
@@ -276,7 +277,7 @@ CREATE TABLE `RuleSuccessCriteria` (
   CONSTRAINT `SuccessCriteria_Rule_fk` FOREIGN KEY (`SCId`) REFERENCES `SuccessCriteria` (`SCId`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO Continent (name) VALUES ('Asia');
+/*INSERT INTO Continent (name) VALUES ('Asia');
 INSERT INTO Country (name, continentId) VALUES ('Afghanistan', 1);
 INSERT INTO Continent (name) VALUES ('Europe');
 INSERT INTO Country (name, continentId) VALUES ('Albania', 2);
@@ -819,4 +820,4 @@ INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("62", "5");
 INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("63", "5");
 INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("64", "5");
 INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("65", "2");
-INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("66", "18");
+INSERT INTO RuleElementType (RuleId, TypeId) VALUES ("66", "18");*/

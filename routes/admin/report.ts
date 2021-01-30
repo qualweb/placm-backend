@@ -16,15 +16,12 @@ router.post('/add', async function (req, res, next) {
       // or file === undefined, reiniciar pedido e button
       res.send(errors);
     } else {
-      //console.log(req.body.jsons);
-      //console.log((req.body.jsons).length);
-        //const jsonFromLink = req.body.jsonFromLink;
-        const serverName = req.body.serverName;
-        const formData = JSON.parse(req.body.formData);
-        const arrayJsons = JSON.parse(req.body.jsons);
-        add_earl_report(serverName, formData, ...arrayJsons)
-          .then(result => res.send(result))
-          .catch((err: any) => res.send(err));
+      const serverName = req.body.serverName;
+      const formData = JSON.parse(req.body.formData);
+      const arrayJsons = JSON.parse(req.body.jsons);
+      add_earl_report(serverName, formData, ...arrayJsons)
+        .then(result => res.send(result))
+        .catch((err: any) => res.send(err));
       }
   } catch (err) {
     console.log(err);

@@ -1,5 +1,4 @@
 import express from "express";
-//import { get_number_of_tags, get_all_tag_data, get_all_tags_names } from "../models/tag";
 import { get_data, get_data_sc, get_names } from "../models/tag";
 import { get_data_sc_compare, get_data_compare } from "../models/tag";
 

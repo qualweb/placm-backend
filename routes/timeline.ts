@@ -1,20 +1,7 @@
 import express from "express";
-import { by_month_assertions, assertions_by_date_cumulative, get_distinct_dates, by_month_scriteria } from "../models/timeline";
+import { by_month_assertions, by_month_scriteria, assertions_by_date_cumulative, get_distinct_dates } from "../models/timeline";
 
 const router = express.Router();
-
-router.get('/timeline', async function (req, res, next) {
-  try {
-    let serverName = req.query.name;
-    let filters = req.query.filters ? req.query.filters : {};
-    assertions_by_date_cumulative(serverName, filters)
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
 
 router.get('/byMonthAS', async function (req, res, next) {
   try {
@@ -42,6 +29,20 @@ router.get('/byMonthSC', async function (req, res, next) {
   }
 });
 
+/************* NOT IN USE *****************/
+router.get('/timeline', async function (req, res, next) {
+  try {
+    let serverName = req.query.name;
+    let filters = req.query.filters ? req.query.filters : {};
+    assertions_by_date_cumulative(serverName, filters)
+      .then((result: any) => res.send(result))
+      .catch((err: any) => res.send(err));
+  } catch (err) {
+      console.log(err);
+      res.send(err);
+  }
+});
+
 router.get('/dates', async function (req, res, next) {
   try {
     let serverName = req.query.name;
@@ -54,5 +55,6 @@ router.get('/dates', async function (req, res, next) {
       res.send(err);
   }
 });
+/******************************************/
 
 export = router;

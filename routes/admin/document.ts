@@ -1,17 +1,17 @@
 import express from "express";
-import { get_data_by_application } from "../models/page";
+import { get_document_by_url } from "../../models/admin/document"
 
 const router = express.Router();
 
-router.get('/byApp', async function (req, res, next) {
+router.get('/fetch', async function (req, res, next) {
   try {
-      get_data_by_application(req.query.id)
+    get_document_by_url(req.query.url)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
-      console.log(err);
-      res.send(err);
+    console.log(err);
+    res.send(err);
   }
 });
-
+  
 export = router;

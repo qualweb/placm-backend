@@ -1,167 +1,13 @@
-import { execute_query, execute_query_proto } from "../lib/database";
-import { error, success } from "../lib/responses";
-import { readyStringToQuery } from "../lib/util";
+import { execute_query } from "../database/database";
+import { error, success } from "../util/responses";
 
-const get_data_by_sector = async () => {
-  let query;
-  try {
-    query =
-    `SELECT app.Sector as sector,
-      COUNT(DISTINCT app.ApplicationId) as nApps, 
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0
-    GROUP BY app.Sector;`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
+/* In this file, all these functions return data related to the classes of:
+ * sector
+ * organization
+ * application/website
+ */
 
-const get_data_by_type = async () => {
-  let query;
-  try {
-    query =
-    `SELECT app.Type as type,
-      COUNT(DISTINCT app.ApplicationId) as nApps, 
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0
-    GROUP BY app.Type;`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_data_by_name = async () => {
-  let query;
-  try {
-    query =
-    `SELECT app.Name as name,
-      app.ApplicationId as id,
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0
-    GROUP BY app.Name;`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_all_names_not_deleted = async () => {
-  let query;
-  try {
-    query =
-    `SELECT app.Name as name,
-      app.ApplicationId as id
-    FROM
-      Application app
-    WHERE app.deleted = 0`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_data_except_id = async (ids: string[]) => {
-  let query;
-  try {
-    query =
-    `SELECT app.Name as name,
-      app.ApplicationId as id,
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0 AND app.ApplicationId NOT IN (${ids})
-    GROUP BY app.Name;`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data = async (tableName: string, serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -342,6 +188,7 @@ const get_data = async (tableName: string, serverName: string, filters: any) => 
   }
 }
 
+/* Get success criterion metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data_sc = async (tableName: string, serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -553,96 +400,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters: any) 
   }
 }
 
-const get_all_sc_data_app = async(serverName: string, filters: any) => {
-  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
-  let query;
-  let appId = filters.appIds ? filters.appIds.split(',') : null;
-  try {
-    query =
-    `DROP TABLE IF EXISTS workingTable;
-    CREATE TEMPORARY TABLE workingTable AS
-    SELECT 
-      sc.*,
-      (SELECT JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'id', a.assertionid,
-          'eval', eval.name,
-          'rulename', r.name,
-          'rulelink', r.url,
-          'page', p.url,
-          'outcome', a.outcome,
-          'description', a.description))) as assertions,
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as passed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as failed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as untested
-    FROM Application app
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-      (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId, a.Description
-        FROM
-          Assertion a
-        WHERE
-          date = (SELECT max(a1.Date) 
-                    FROM Assertion a1 
-                      WHERE a.RuleId = a1.RuleId 
-                      AND a.PageId = a1.PageId)
-          AND a.deleted = 0
-        ORDER BY date DESC) a
-          ON a.PageId = p.PageId
-    INNER JOIN
-      RuleSuccessCriteria scr
-        ON scr.RuleId = a.RuleId
-    INNER JOIN
-      SuccessCriteria sc
-        ON scr.SCId = sc.SCId
-    INNER JOIN
-      EvaluationTool eval
-        on eval.EvaluationToolId = a.EvaluationToolId
-    INNER JOIN
-      Rule r
-        on r.RuleId = a.RuleId
-    WHERE app.deleted = 0
-    AND app.ApplicationId IN (?)
-    GROUP BY 1;
-    
-    
-    ALTER TABLE workingTable
-    ADD COLUMN outcome VARCHAR(25) AFTER untested;
-
-    UPDATE workingTable
-      SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0, outcome = 'failed'
-      WHERE failed >= 1;
-    UPDATE workingTable
-      SET passed = 0, inapplicable = 0, untested = 0, outcome = 'cantTell'
-      WHERE failed = 0 AND cantTell >= 1;
-    UPDATE workingTable
-      SET inapplicable = 0, untested = 0, outcome = 'passed'
-      WHERE failed = 0 AND cantTell = 0 AND passed >= 1;
-    UPDATE workingTable
-      SET untested = 0, outcome = 'inapplicable'
-      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable >= 1;
-    UPDATE workingTable
-      SET outcome = 'untested'
-      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 0 AND untested >= 1;
-      
-    SELECT SCId, Name, Principle, Level, Url, Assertions, nPages, nAssertions,
-      outcome
-      FROM workingTable
-    ORDER BY 1;`;
-    
-    let result = (await execute_query(serverName, query, [appId]));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_compare = async (tableName: string, serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -854,6 +612,7 @@ const get_data_compare = async (tableName: string, serverName: string, filters: 
   }
 }
 
+/* Get success criterion metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_sc_compare = async (tableName: string, serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -1133,6 +892,9 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   }
 }
 
+/* Get names of application, organization or sector, given some query params
+ * This query is necessary to offer an auto-fill,
+ * in chart's modal window and administration page */
 const get_names = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -1336,6 +1098,98 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
 
   try {
     let result = (await execute_query(serverName, query, params));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+/* Get assertions by success criteria, related to an application/website 
+ * This query's result is used to fulfill the 'Details' navigation */
+const get_all_sc_data_app = async(serverName: string, filters: any) => {
+  filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
+  let query;
+  let appId = filters.appIds ? filters.appIds.split(',') : null;
+  try {
+    query =
+    `DROP TABLE IF EXISTS workingTable;
+    CREATE TEMPORARY TABLE workingTable AS
+    SELECT 
+      sc.*,
+      (SELECT JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'id', a.assertionid,
+          'eval', eval.name,
+          'rulename', r.name,
+          'rulelink', r.url,
+          'page', p.url,
+          'outcome', a.outcome,
+          'description', a.description))) as assertions,
+      COUNT(DISTINCT p.PageId) as nPages,
+      COUNT(DISTINCT a.AssertionId) as nAssertions,
+      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as passed,
+      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as failed,
+      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as cantTell,
+      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as inapplicable,
+      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as untested
+    FROM Application app
+    INNER JOIN
+      Page p
+        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
+    INNER JOIN
+      (SELECT a.AssertionId, a.PageId, a.Outcome, a.RuleId, a.EvaluationToolId, a.Description
+        FROM
+          Assertion a
+        WHERE
+          date = (SELECT max(a1.Date) 
+                    FROM Assertion a1 
+                      WHERE a.RuleId = a1.RuleId 
+                      AND a.PageId = a1.PageId)
+          AND a.deleted = 0
+        ORDER BY date DESC) a
+          ON a.PageId = p.PageId
+    INNER JOIN
+      RuleSuccessCriteria scr
+        ON scr.RuleId = a.RuleId
+    INNER JOIN
+      SuccessCriteria sc
+        ON scr.SCId = sc.SCId
+    INNER JOIN
+      EvaluationTool eval
+        on eval.EvaluationToolId = a.EvaluationToolId
+    INNER JOIN
+      Rule r
+        on r.RuleId = a.RuleId
+    WHERE app.deleted = 0
+    AND app.ApplicationId IN (?)
+    GROUP BY 1;
+    
+    
+    ALTER TABLE workingTable
+    ADD COLUMN outcome VARCHAR(25) AFTER untested;
+
+    UPDATE workingTable
+      SET cantTell = 0, passed = 0, inapplicable = 0, untested = 0, outcome = 'failed'
+      WHERE failed >= 1;
+    UPDATE workingTable
+      SET passed = 0, inapplicable = 0, untested = 0, outcome = 'cantTell'
+      WHERE failed = 0 AND cantTell >= 1;
+    UPDATE workingTable
+      SET inapplicable = 0, untested = 0, outcome = 'passed'
+      WHERE failed = 0 AND cantTell = 0 AND passed >= 1;
+    UPDATE workingTable
+      SET untested = 0, outcome = 'inapplicable'
+      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable >= 1;
+    UPDATE workingTable
+      SET outcome = 'untested'
+      WHERE failed = 0 AND cantTell = 0 AND passed = 0 AND inapplicable = 0 AND untested >= 1;
+      
+    SELECT SCId, Name, Principle, Level, Url, Assertions, nPages, nAssertions,
+      outcome
+      FROM workingTable
+    ORDER BY 1;`;
+    
+    let result = (await execute_query(serverName, query, [appId]));
     return success(result);
   } catch(err){
     return error(err);

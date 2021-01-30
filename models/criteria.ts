@@ -1,6 +1,11 @@
-import { success, error } from "../lib/responses";
-import { execute_query } from "../lib/database";
+import { success, error } from "../util/responses";
+import { execute_query } from "../database/database";
 
+/* In this file, all these functions return data related to the classes of:
+ * success criteria
+ */
+
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data_success_criteria = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -197,6 +202,7 @@ const get_data_success_criteria = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_success_criteria_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -427,6 +433,9 @@ const get_data_success_criteria_compare = async (serverName: string, filters: an
   }
 }
 
+/* Get names of application, organization or sector, given some query params
+ * This query is necessary to offer an auto-fill,
+ * in chart's modal window and administration page */
 const get_names = async (serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];

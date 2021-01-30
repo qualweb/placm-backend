@@ -1,8 +1,0 @@
-{
-    "connectionLimit" : 10,
-    "host"     : "localhost",
-    "user"     : "bandrade",
-    "password" : "bandrade",
-    "database" : "placmprototest",
-    "multipleStatements": true
-}

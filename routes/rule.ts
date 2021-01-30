@@ -1,18 +1,7 @@
 import express from "express";
-import { get_all_data, get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare, get_names } from "../models/rule";
+import { get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare, get_names } from "../models/rule";
 
 const router = express.Router();
-
-router.get('/allData', async function (req, res, next) {
-  try {
-      get_all_data()
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
 
 router.get('/ruleData', async function (req, res, next) {
   try {

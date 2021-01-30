@@ -1,18 +1,7 @@
 import express from "express";
-import { get_data_by_evaluation_tool, get_data_evaluation_tool, get_data_evaluation_tool_sc, get_data_evaluation_tool_compare, get_data_evaluation_tool_sc_compare, get_names } from "../models/evaluation";
+import { get_data_evaluation_tool, get_data_evaluation_tool_sc, get_data_evaluation_tool_compare, get_data_evaluation_tool_sc_compare, get_names } from "../models/evaluation";
 
 const router = express.Router();
-
-router.get('/byTool', async function (req, res, next) {
-  try {
-      get_data_by_evaluation_tool()
-      .then((result: any) => res.send(result))
-      .catch((err: any) => res.send(err));
-  } catch (err) {
-      console.log(err);
-      res.send(err);
-  }
-});
 
 router.get('/evalToolData', async function (req, res, next) {
   try {

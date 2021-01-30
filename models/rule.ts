@@ -1,41 +1,13 @@
-import { success, error } from "../lib/responses";
-import { execute_query_proto, execute_query } from "../lib/database";
+import { success, error } from "../util/responses";
+import { execute_query } from "../database/database";
 
-const get_all_data = async () => {
-  let query;
-  try {
-    query =
-    `SELECT r.Name as name,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Rule r
-    INNER JOIN
-      Page p
-        ON p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE r.RuleId = a.RuleId
-    GROUP BY a.RuleId;`;
-    let result = (await execute_query_proto(query));
-    return success(<any> result);
-  } catch(err){
-    console.log(err);
-    return error(err);
-  }
-}
+/* In this file, all these functions return data related to the classes of:
+ * rule
+ * type of element
+ */
 
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations
+ * rule class */
 const get_data_rule = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -259,6 +231,8 @@ const get_data_rule = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations
+ * type of element class */
 const get_data_element_type = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -466,6 +440,8 @@ const get_data_element_type = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations 
+ * rule class */
 const get_data_rule_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -729,6 +705,8 @@ const get_data_rule_compare = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations 
+ * type of element class */
 const get_data_element_type_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -973,6 +951,9 @@ const get_data_element_type_compare = async (serverName: string, filters: any) =
   }
 }
 
+/* Get names of application, organization or sector, given some query params
+ * This query is necessary to offer an auto-fill,
+ * in chart's modal window and administration page */
 const get_names = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -1168,4 +1149,4 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
   }
 }
 
-export {get_all_data, get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare, get_names};
+export {get_data_rule, get_data_element_type, get_data_rule_compare, get_data_element_type_compare, get_names};

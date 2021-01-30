@@ -1,137 +1,12 @@
-import { success, error } from "../lib/responses";
-//import { COUNTRY_JSON } from "../lib/constants";
-import { execute_query, execute_query_proto } from "../lib/database";
+import { success, error } from "../util/responses";
+import { execute_query } from "../database/database";
 
-/*const add_countries = async () => {
-  let result: any = {
-    entries: [],
-    countries: [],
-    continents: []
-  };
+/* In this file, all these functions return data related to the classes of:
+ * continent
+ * country
+ */
 
-  let query, country;
-
-  try {
-    for (let c of Object.values(COUNTRY_JSON)) {
-      query = `SELECT Name FROM Country WHERE name = "${c.country}";`;
-      country = (await execute_query(query))[0];
-      if (!country && c.country) {
-        query = `INSERT INTO Country (name, continent)
-            VALUES ("${c.country}", "${c.continent}");`;
-        country = await execute_query(query);
-        result.entries.push(country.insertId);
-        result.countries.push(c.country);
-        if (result.continents.indexOf(c.continent) === -1)
-          result.continents.push(c.continent);
-      }
-    }
-  } catch (err) {
-    console.log(err);
-    throw error(err);
-  }
-  return success(result);
-};*/
-
-const get_data_by_country = async () => {
-  let query;
-  try {
-    query =
-    `SELECT c.Name as name,
-      c.CountryId as id,
-      COUNT(DISTINCT app.ApplicationId) as nApps,
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Country c
-        ON app.CountryId = c.CountryId
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0
-    GROUP BY c.CountryId;`;
-    let result = (await execute_query_proto(query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_all_country_names = async (serverName: string) => {
-  let query;
-  try {
-    query =
-    `SELECT c.Name as name,
-      c.CountryId as id,
-      NOW() as date
-    FROM
-      Country c
-    GROUP BY c.Name;`;
-    let result = (await execute_query(serverName, query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
-const get_data_continent = async (serverName: string) => {
-  let query;
-  try {
-    query =
-    `SELECT cont.ContinentId as id,
-      cont.Name as name,
-      COUNT(DISTINCT app.ApplicationId) as nApps,
-      COUNT(DISTINCT p.PageId) as nPages,
-      COUNT(DISTINCT a.AssertionId) as nAssertions,
-      COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-      COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-      COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-      COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-      COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-    FROM
-      Application app
-    INNER JOIN
-      Country c
-        ON app.CountryId = c.CountryId
-    INNER JOIN
-      Continent cont
-        ON cont.ContinentId = c.continentId
-    INNER JOIN
-      Page p
-        ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-    INNER JOIN
-    (SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-      FROM
-        Assertion a
-      WHERE
-        date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-        AND a.deleted = 0
-      ORDER BY date DESC) a
-        ON a.PageId = p.PageId
-    WHERE app.deleted = 0
-    GROUP BY cont.Name;`;
-    let result = (await execute_query(serverName, query));
-    return success(result);
-  } catch(err){
-    return error(err);
-  }
-}
-
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data = async (tableName: string, serverName: string, filters?: any) => {
   filters = filters && Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -263,6 +138,7 @@ const get_data = async (tableName: string, serverName: string, filters?: any) =>
   }
 }
 
+/* Get success criterion metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data_sc = async (tableName: string, serverName: string, filters?: any) => {
   filters = filters && Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -421,6 +297,7 @@ const get_data_sc = async (tableName: string, serverName: string, filters?: any)
   }
 }
 
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_compare = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -586,6 +463,7 @@ const get_data_compare = async (tableName: string, serverName: string, filters?:
   }
 }
 
+/* Get success criterion metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_sc_compare = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -798,6 +676,8 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
   }
 }
 
+/* Get names of continent or country, given some query params
+ * This query is necessary in administration page, to offer an auto-fill in the form */
 const get_names = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -820,16 +700,25 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
       cont.Name as name`;
       break;
   }
-
-  query = query + `
-  FROM
-    Application app
-  LEFT JOIN
-    Country c
-      ON c.CountryId = app.CountryId
-  LEFT JOIN
-    Continent cont
-      ON c.ContinentId = cont.ContinentId`; 
+  
+  if(filters.length){
+    query = query + `
+    FROM
+      Application app
+    LEFT JOIN
+      Country c
+        ON c.CountryId = app.CountryId
+    LEFT JOIN
+      Continent cont
+        ON c.ContinentId = cont.ContinentId`; 
+  } else {
+    query = query + `
+    FROM
+      Country c
+    LEFT JOIN
+      Continent cont
+        ON c.ContinentId = cont.ContinentId`; 
+  }
 
   if(filters.tagIds){
     query = query + `
@@ -887,8 +776,11 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
     query += `
       AND r.RuleId = a.RuleId`;
   }
-  query = query + `
-  WHERE app.deleted = 0`;
+
+  if(filters.length){
+    query = query + `
+    WHERE app.deleted = 0`;
+  }
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -996,4 +888,4 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
   }
 }
 
-export {get_all_country_names, get_names, get_data, get_data_sc, get_data_compare, get_data_sc_compare};
+export {get_names, get_data, get_data_sc, get_data_compare, get_data_sc_compare};

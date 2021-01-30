@@ -1,50 +1,11 @@
-import { success, error } from "../lib/responses";
-import { execute_query_proto, execute_query } from "../lib/database";
+import { success, error } from "../util/responses";
+import { execute_query } from "../database/database";
 
-// method to get name, number of applications, number of pages,
-// number of passed, failed, cantTell, inapplicable and untested (most recent) assertions
-// of each tag
-const get_all_tag_data = async () => {
-  let query;
-  try {
-    query = `SELECT t.TagId as id, t.Name as name,
-              COUNT(DISTINCT ta.ApplicationId) as nApps,
-              COUNT(DISTINCT p.PageId) as nPages,
-              COUNT(DISTINCT a.AssertionId) as nAssertions,
-              COUNT(IF(a.Outcome = 'passed', 1, NULL)) as nPassed,
-              COUNT(IF(a.Outcome = 'failed', 1, NULL)) as nFailed,
-              COUNT(IF(a.Outcome = 'cantTell', 1, NULL)) as nCantTell,
-              COUNT(IF(a.Outcome = 'inapplicable', 1, NULL)) as nInapplicable,
-              COUNT(IF(a.Outcome = 'untested', 1, NULL)) as nUntested
-            FROM
-              Tag t
-            INNER JOIN
-              TagApplication ta
-                ON t.TagId = ta.TagId
-            INNER JOIN
-              Application app
-                ON app.ApplicationId = ta.ApplicationId AND app.deleted = 0
-            INNER JOIN
-              Page p
-                ON p.ApplicationId = app.ApplicationId AND p.deleted = 0
-            INNER JOIN (
-              SELECT a.AssertionId, a.RuleId, a.PageId, a.Outcome
-              FROM 
-                Assertion a
-              WHERE 
-                date = (SELECT max(a1.Date) FROM Assertion a1 WHERE a.RuleId = a1.RuleId AND a.PageId = a1.PageId)
-                AND a.deleted = 0
-              ORDER BY date DESC) a
-                ON a.PageId = p.PageId
-            GROUP BY t.TagId;`;
-    let result = (await execute_query_proto(query));
-    return success(<any> result);
-  } catch(err){
-    console.log(err);
-    return error(err);
-  }
-}
+/* In this file, all these functions return data related to the classes of:
+ * tag
+ */
 
+/* Get assertions' metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data = async (serverName: any, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -164,6 +125,7 @@ const get_data = async (serverName: any, filters: any) => {
   }
 }
 
+/* Get success criterion metrics in "simple" way, used in default and 'Drilldown' navigations */
 const get_data_sc = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -311,6 +273,7 @@ const get_data_sc = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get assertions' metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_compare = async (serverName: any, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -468,6 +431,7 @@ const get_data_compare = async (serverName: any, filters: any) => {
   }
 }
 
+/* Get success criterion metrics in "compare" way, used in 'Comparison' and 'Group by' navigations */
 const get_data_sc_compare = async (serverName: string, filters: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let groupByParams = [];
@@ -671,6 +635,9 @@ const get_data_sc_compare = async (serverName: string, filters: any) => {
   }
 }
 
+/* Get names of tag, given some query params
+ * This query is necessary to offer an auto-fill,
+ * in chart's modal window and administration page */
 const get_names = async (serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -679,15 +646,21 @@ const get_names = async (serverName: string, filters?: any) => {
   SELECT t.TagId as id, 
   t.Name as name`;
 
-  query = query + `
-  FROM
-    Application app
-  LEFT JOIN
-    TagApplication ta
-      ON ta.ApplicationId = app.ApplicationId
-  LEFT JOIN
-    Tag t
-      ON t.TagId = ta.TagId`; 
+  if(filters.length){
+    query = query + `
+    FROM
+      Application app
+    LEFT JOIN
+      TagApplication ta
+        ON ta.ApplicationId = app.ApplicationId
+    LEFT JOIN
+      Tag t
+        ON t.TagId = ta.TagId`; 
+  } else {
+    query = query + `
+    FROM
+      Tag t`; 
+  }
 
   if(filters.countryIds || filters.continentIds){
     query = query + `
@@ -745,8 +718,11 @@ const get_names = async (serverName: string, filters?: any) => {
       AND r.RuleId = a.RuleId
     `;
   }
-  query = query + `
-  WHERE app.deleted = 0`;
+
+  if(filters.length){
+    query = query + `
+    WHERE app.deleted = 0`;
+  }
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');

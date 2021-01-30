@@ -1,12 +1,13 @@
 import { forEach } from "lodash";
 import { add_earl_report } from "./report";
 import { parse } from 'node-html-parser';
-import { twitterRegex, emailRegex, telephoneRegex } from "../../lib/constants";
-import { setCharAt, readyStringToQuery, readyUrlToQuery, regulateStringLength } from "../../lib/util";
-import { execute_query } from "../../lib/database";
-import { error, success } from "../../lib/responses";
-import { fetchDocument } from "./proto";
+import { twitterRegex, emailRegex, telephoneRegex } from "../../util/constants";
+import { setCharAt } from "../../util/util";
+import { execute_query } from "../../database/database";
+import { error, success } from "../../util/responses";
+import { fetchDocument } from "./document";
 
+/* Parse and insert Accessibility Statement into database */
 const add_accessibility_statement = async (serverName: string, numLinks: number, formData: any, ...linksAndTexts: string[]) => {
 
   let statements: any[] = [];
@@ -539,6 +540,8 @@ const add_accessibility_statement = async (serverName: string, numLinks: number,
   return success(results);
 }
 
+/* Find children links
+ * mainly used to find EARL reports */
 function findChildrenLinks(...evaluations: NodeListOf<Element>[]): string[] {
   let aElements, href;
   let earlReportsLinks: string[] = [];
