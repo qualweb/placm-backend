@@ -27,6 +27,7 @@ function fetchDocument(url: any) {
 
 /* Respond with document object, from a given URL */
 const get_document_by_url = async (urlReq: string) => {
+  console.log("im here");
   const queryObject = new URL(urlReq);
   if (queryObject.href) {
       const document = await fetchDocument(queryObject.href);
