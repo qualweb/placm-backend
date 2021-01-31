@@ -86,7 +86,6 @@ const insert_rules_element_type = async (serverName: string) => {
             query = '';
             queryParams = [];
             for(let sc of r['metadata']['success-criteria']){
-              console.log("atao", r['metadata']['success-criteria']);
               query += `INSERT INTO RuleSuccessCriteria (RuleId, SCId) VALUES (?, ?);`;
               queryParams.push(i, sc.name);
             }
