@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/countryNames', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_names('country', req.query.name, filters)
+    get_names('country', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/countryNames', async function (req, res, next) {
 router.get('/continentNames', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_names('continent', req.query.name, filters)
+    get_names('continent', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -29,7 +29,7 @@ router.get('/continentNames', async function (req, res, next) {
 
 router.get('/continentData', async function (req, res, next) {
   try {
-    get_data('continent', req.query.name)
+    get_data('continent', <string>req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -41,7 +41,7 @@ router.get('/continentData', async function (req, res, next) {
 router.get('/countryData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data('country', req.query.name, filters)
+    get_data('country', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -52,7 +52,7 @@ router.get('/countryData', async function (req, res, next) {
 
 router.get('/continentDataSC', async function (req, res, next) {
   try {
-    get_data_sc('continent', req.query.name)
+    get_data_sc('continent', <string>req.query.name)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -64,7 +64,7 @@ router.get('/continentDataSC', async function (req, res, next) {
 router.get('/countryDataSC', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_sc('country', req.query.name, filters)
+    get_data_sc('country', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -81,7 +81,7 @@ router.get('/continentDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_compare('continent', req.query.name, filters)
+    get_data_compare('continent', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -98,7 +98,7 @@ router.get('/countryDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_compare('country', req.query.name, filters)
+    get_data_compare('country', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -115,7 +115,7 @@ router.get('/continentDataSCCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_sc_compare('continent', req.query.name, filters)
+    get_data_sc_compare('continent', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -132,7 +132,7 @@ router.get('/countryDataSCCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_sc_compare('country', req.query.name, filters)
+    get_data_sc_compare('country', <string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

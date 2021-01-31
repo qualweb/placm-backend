@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/scData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_success_criteria(req.query.name, filters)
+    get_data_success_criteria(<string>req.query.name, filters)
       .then((result: any) => {res.send(result);})
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -23,7 +23,7 @@ router.get('/scDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_success_criteria_compare(req.query.name, filters)
+    get_data_success_criteria_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -36,7 +36,7 @@ router.get('/scNames', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    get_names(serverName, filters)
+    get_names(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

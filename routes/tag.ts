@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/tagNames', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_names(req.query.name, filters)
+    get_names(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -19,7 +19,7 @@ router.get('/tagNames', async function (req, res, next) {
 router.get('/tagData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data(req.query.name, filters)
+    get_data(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -31,7 +31,7 @@ router.get('/tagData', async function (req, res, next) {
 router.get('/tagDataSC', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_sc(req.query.name, filters)
+    get_data_sc(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -48,7 +48,7 @@ router.get('/tagDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_compare(req.query.name, filters)
+    get_data_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -65,7 +65,7 @@ router.get('/tagDataSCCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_sc_compare(req.query.name, filters)
+    get_data_sc_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

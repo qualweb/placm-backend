@@ -7,7 +7,7 @@ router.get('/byMonthAS', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    by_month_assertions(serverName, filters)
+    by_month_assertions(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -20,7 +20,7 @@ router.get('/byMonthSC', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    by_month_scriteria(serverName, filters)
+    by_month_scriteria(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -34,7 +34,7 @@ router.get('/timeline', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    assertions_by_date_cumulative(serverName, filters)
+    assertions_by_date_cumulative(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -47,7 +47,7 @@ router.get('/dates', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    get_distinct_dates(serverName, filters)
+    get_distinct_dates(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

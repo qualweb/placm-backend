@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/ruleData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_rule(req.query.name, filters)
+    get_data_rule(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/ruleData', async function (req, res, next) {
 router.get('/elemData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_element_type(req.query.name, filters)
+    get_data_element_type(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -35,7 +35,7 @@ router.get('/ruleDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_rule_compare(req.query.name, filters)
+    get_data_rule_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -52,7 +52,7 @@ router.get('/elemDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_element_type_compare(req.query.name, filters)
+    get_data_element_type_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -65,7 +65,7 @@ router.get('/ruleNames', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    get_names('rule', serverName, filters)
+    get_names('rule', <string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -78,7 +78,7 @@ router.get('/typeNames', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    get_names('type', serverName, filters)
+    get_names('type', <string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {

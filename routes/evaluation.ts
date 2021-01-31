@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/evalToolData', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_evaluation_tool(req.query.name, filters)
+    get_data_evaluation_tool(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/evalToolData', async function (req, res, next) {
 router.get('/evalToolDataSC', async function (req, res, next) {
   try {
     let filters = req.query.filters ? req.query.filters : {};
-    get_data_evaluation_tool_sc(req.query.name, filters)
+    get_data_evaluation_tool_sc(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -35,7 +35,7 @@ router.get('/evalToolDataCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_evaluation_tool_compare(req.query.name, filters)
+    get_data_evaluation_tool_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -52,7 +52,7 @@ router.get('/evalToolDataSCCompare', async function (req, res, next) {
     } else {
       throw({ code: 0, message: 'No queryParams given', err: 'EMPTY_PARAMS' });
     }
-    get_data_evaluation_tool_sc_compare(req.query.name, filters)
+    get_data_evaluation_tool_sc_compare(<string>req.query.name, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
@@ -65,7 +65,7 @@ router.get('/evalToolNames', async function (req, res, next) {
   try {
     let serverName = req.query.name;
     let filters = req.query.filters ? req.query.filters : {};
-    get_names(serverName, filters)
+    get_names(<string>serverName, filters)
       .then((result: any) => res.send(result))
       .catch((err: any) => res.send(err));
   } catch (err) {
