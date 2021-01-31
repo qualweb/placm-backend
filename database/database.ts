@@ -32,7 +32,7 @@ function execute_query(serverName: string, query: any, queryParams: any[] = []):
             resolve(res);
           }
         });
-        console.log(queryString.sql);
+        //console.log(queryString.sql);
       }
     });
   }); 

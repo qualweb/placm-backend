@@ -43,12 +43,12 @@ async function crawl_from_excel() {
     }
   }
 
-  fs.writeFile('lib/new_urls.txt', excelLinks, (err) => {
+  /*fs.writeFile('lib/new_urls.txt', excelLinks, (err) => {
     if (err) console.log(err);
     console.log('New urls saved!');
   });
 
-  /*let newurls: string[] | null;
+  let newurls: string[] | null;
   newurls = await new Promise((resolve, reject) => {
     fs.readFile('lib/new_urls.txt', function (err, data) {
       if (err) {
