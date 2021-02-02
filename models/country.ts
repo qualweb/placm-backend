@@ -677,7 +677,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
 }
 
 /* Get names of continent or country, given some query params
- * This query is necessary in administration page, to offer an auto-fill in the form */
+ * This query is necessary to offer an auto-fill in chart's modal window */
 const get_names = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -700,8 +700,6 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
       cont.Name as name`;
       break;
   }
-  
-  if(filters.length){
     query = query + `
     FROM
       Application app
@@ -710,15 +708,7 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
         ON c.CountryId = app.CountryId
     LEFT JOIN
       Continent cont
-        ON c.ContinentId = cont.ContinentId`; 
-  } else {
-    query = query + `
-    FROM
-      Country c
-    LEFT JOIN
-      Continent cont
-        ON c.ContinentId = cont.ContinentId`; 
-  }
+        ON c.ContinentId = cont.ContinentId`;
 
   if(filters.tagIds){
     query = query + `
@@ -776,11 +766,8 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
     query += `
       AND r.RuleId = a.RuleId`;
   }
-
-  if(filters.length){
-    query = query + `
+  query = query + `
     WHERE app.deleted = 0`;
-  }
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -888,4 +875,43 @@ const get_names = async (tableName: string, serverName: string, filters?: any) =
   }
 }
 
-export {get_names, get_data, get_data_sc, get_data_compare, get_data_sc_compare};
+/* Get names of continent or country, given some query params
+ * This query is necessary in administration page, to offer an auto-fill in the form */
+const get_all_names = async (tableName: string, serverName: string) => {
+  let query;
+  switch(tableName){
+    case 'country':
+      query = `
+      SELECT c.CountryId as id, 
+      c.Name as name`;
+      break;
+    case 'continent':
+      query = `
+      SELECT c.ContinentId as id,
+      cont.Name as name`;
+      break;
+    default:
+      query = `
+      SELECT c.ContinentId as id,
+      cont.Name as name`;
+      break;
+  }
+    query = query + `
+    FROM
+      Country c
+    LEFT JOIN
+      Continent cont
+        ON c.ContinentId = cont.ContinentId`; 
+  
+  query = query + `
+  GROUP BY 1,2;`;
+
+  try {
+    let result = (await execute_query(serverName, query));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+export {get_names, get_all_names, get_data, get_data_sc, get_data_compare, get_data_sc_compare};

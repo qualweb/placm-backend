@@ -636,8 +636,7 @@ const get_data_sc_compare = async (serverName: string, filters: any) => {
 }
 
 /* Get names of tag, given some query params
- * This query is necessary to offer an auto-fill,
- * in chart's modal window and administration page */
+ * This query is necessary to offer an auto-fill in chart's modal window */
 const get_names = async (serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
@@ -646,21 +645,15 @@ const get_names = async (serverName: string, filters?: any) => {
   SELECT t.TagId as id, 
   t.Name as name`;
 
-  if(filters.length){
-    query = query + `
-    FROM
-      Application app
-    LEFT JOIN
-      TagApplication ta
-        ON ta.ApplicationId = app.ApplicationId
-    LEFT JOIN
-      Tag t
-        ON t.TagId = ta.TagId`; 
-  } else {
-    query = query + `
-    FROM
-      Tag t`; 
-  }
+  query = query + `
+  FROM
+    Application app
+  LEFT JOIN
+    TagApplication ta
+      ON ta.ApplicationId = app.ApplicationId
+  LEFT JOIN
+    Tag t
+      ON t.TagId = ta.TagId`; 
 
   if(filters.countryIds || filters.continentIds){
     query = query + `
@@ -719,10 +712,8 @@ const get_names = async (serverName: string, filters?: any) => {
     `;
   }
 
-  if(filters.length){
-    query = query + `
+  query = query + `
     WHERE app.deleted = 0`;
-  }
 
   if(filters.continentIds){
     splitted = filters.continentIds.split(',');
@@ -830,5 +821,24 @@ const get_names = async (serverName: string, filters?: any) => {
   }
 }
 
-export {get_data, get_data_sc, get_names,
+/* Get names of tag, given some query params
+ * This query is necessary to offer an auto-fill in administration page */
+const get_all_names = async (serverName: string) => {
+  let query = `
+  SELECT 
+    t.TagId as id, 
+    t.Name as name
+  FROM
+    Tag t
+  GROUP BY 1,2;`;
+
+  try {
+    let result = (await execute_query(serverName, query));
+    return success(result);
+  } catch(err){
+    return error(err);
+  }
+}
+
+export {get_data, get_data_sc, get_names, get_all_names,
       get_data_compare, get_data_sc_compare};

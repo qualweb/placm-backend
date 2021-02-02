@@ -893,8 +893,7 @@ const get_data_sc_compare = async (tableName: string, serverName: string, filter
 }
 
 /* Get names of application, organization or sector, given some query params
- * This query is necessary to offer an auto-fill,
- * in chart's modal window and administration page */
+ * This query is necessary to offer an auto-fill in chart's modal window */
 const get_names = async (tableName: string, serverName: string, filters?: any) => {
   filters = Object.keys(filters).length !== 0 ? JSON.parse(filters) : {};
   let params = [];
